@@ -124,6 +124,19 @@ class Ride(db.Model):
         return self.status == "Completed"
 
     @property
+    def is_expired(self):
+        if self.status == "Expired":
+            return True
+        now = datetime.now()
+        today_str = now.strftime("%Y-%m-%d")
+        time_str = now.strftime("%H:%M")
+        if self.ride_date < today_str:
+            return True
+        if self.ride_date == today_str and self.ride_time < time_str:
+            return True
+        return False
+
+    @property
     def accepted_passengers(self):
         return [req.passenger for req in self.requests if req.status == "Accepted"]
 

@@ -173,16 +173,64 @@ def notify_user(user_id, title, message, category="system", related_ride_id=None
 
 
 # =========================================================
+# HOUSEKEEPING: AUTO-EXPIRE OUT-OF-DATE / PAST RIDES
+# =========================================================
+def cleanup_expired_rides():
+    """
+    Housekeeping utility: Automatically marks past/expired rides as 'Expired'.
+    Checks both date and departure time against current local time.
+    Cancels unfulfilled pending passenger requests with a polite notification.
+    """
+    now = datetime.now()
+    current_date = now.strftime("%Y-%m-%d")
+    current_time = now.strftime("%H:%M")
+
+    try:
+        past_rides = Ride.query.filter(
+            Ride.status.in_(["Available", "Full"]),
+            (Ride.ride_date < current_date) |
+            ((Ride.ride_date == current_date) & (Ride.ride_time < current_time))
+        ).all()
+
+        if past_rides:
+            for r in past_rides:
+                r.status = "Expired"
+                for req in r.requests:
+                    if req.status == "Pending":
+                        req.status = "Expired"
+                        req.updated_at = now.strftime("%Y-%m-%d %H:%M:%S")
+                        notify_user(
+                            req.passenger_id,
+                            "Ride Expired",
+                            f"The ride from {r.source} to {r.destination} on {r.ride_date} at {r.ride_time} has expired.",
+                            category="booking",
+                            related_ride_id=None
+                        )
+            db.session.commit()
+            return len(past_rides)
+    except Exception:
+        db.session.rollback()
+    return 0
+
+
+# =========================================================
 # HOME / LANDING PAGE
 # =========================================================
 @app.route("/")
 def home():
+    cleanup_expired_rides()
+    now = datetime.now()
+    current_date = now.strftime("%Y-%m-%d")
+    current_time = now.strftime("%H:%M")
+
     total_rides = Ride.query.count()
-    active_rides = Ride.query.filter_by(status="Available").filter(Ride.seats > 0).count()
+    active_rides = Ride.query.filter_by(status="Available").filter(Ride.seats > 0)\
+        .filter((Ride.ride_date > current_date) | ((Ride.ride_date == current_date) & (Ride.ride_time >= current_time))).count()
     verified_users = User.query.filter_by(is_verified=1).count()
     completed_rides = Ride.query.filter_by(status="Completed").count()
 
     recent_rides = Ride.query.filter_by(status="Available").filter(Ride.seats > 0)\
+        .filter((Ride.ride_date > current_date) | ((Ride.ride_date == current_date) & (Ride.ride_time >= current_time)))\
         .order_by(Ride.ride_date.asc(), Ride.ride_time.asc()).limit(4).all()
 
     recent_reviews = Review.query.order_by(Review.created_at.desc()).limit(3).all()
@@ -463,14 +511,19 @@ def reset_password(token):
 @app.route("/dashboard")
 @login_required
 def dashboard():
+    cleanup_expired_rides()
     user = db.session.get(User, session["user_id"])
+    now = datetime.now()
+    current_date = now.strftime("%Y-%m-%d")
+    current_time = now.strftime("%H:%M")
 
     # Metrics
     my_rides_count = Ride.query.filter_by(driver_id=user.id).count()
     my_active_bookings_count = RideRequest.query.filter_by(passenger_id=user.id)\
         .filter(RideRequest.status.in_(["Pending", "Accepted"])).count()
     available_campus_rides_count = Ride.query.filter_by(status="Available")\
-        .filter(Ride.seats > 0).filter(Ride.driver_id != user.id).count()
+        .filter(Ride.seats > 0).filter(Ride.driver_id != user.id)\
+        .filter((Ride.ride_date > current_date) | ((Ride.ride_date == current_date) & (Ride.ride_time >= current_time))).count()
     pending_driver_requests_count = RideRequest.query.join(Ride)\
         .filter(Ride.driver_id == user.id, RideRequest.status == "Pending").count()
 
@@ -485,6 +538,7 @@ def dashboard():
     # Upcoming available rides on campus (excluding user's own)
     available_rides = Ride.query.filter_by(status="Available")\
         .filter(Ride.seats > 0).filter(Ride.driver_id != user.id)\
+        .filter((Ride.ride_date > current_date) | ((Ride.ride_date == current_date) & (Ride.ride_time >= current_time)))\
         .order_by(Ride.ride_date.asc(), Ride.ride_time.asc()).limit(6).all()
 
     return render_template(
@@ -505,6 +559,7 @@ def dashboard():
 # =========================================================
 @app.route("/search", methods=["GET", "POST"])
 def search():
+    cleanup_expired_rides()
     user_id = session.get("user_id", 0)
 
     source = request.args.get("source", "").strip()
@@ -518,7 +573,20 @@ def search():
         ride_date = request.form.get("ride_date", "").strip()
         gender_pref = request.form.get("gender_preference", "Any").strip()
 
+    now = datetime.now()
+    current_date = now.strftime("%Y-%m-%d")
+    current_time = now.strftime("%H:%M")
+
+    # Base query: only active, upcoming rides
     query = Ride.query.filter_by(status="Available").filter(Ride.seats > 0)
+
+    # Exclude past departure times
+    if not ride_date:
+        query = query.filter((Ride.ride_date > current_date) | ((Ride.ride_date == current_date) & (Ride.ride_time >= current_time)))
+    elif ride_date == current_date:
+        query = query.filter(Ride.ride_date == current_date).filter(Ride.ride_time >= current_time)
+    else:
+        query = query.filter(Ride.ride_date == ride_date)
 
     if user_id:
         query = query.filter(Ride.driver_id != user_id)
@@ -527,8 +595,6 @@ def search():
         query = query.filter(Ride.source.ilike(f"%{source}%"))
     if destination:
         query = query.filter(Ride.destination.ilike(f"%{destination}%"))
-    if ride_date:
-        query = query.filter(Ride.ride_date == ride_date)
     if gender_pref and gender_pref != "Any":
         query = query.filter(Ride.gender_preference.in_([gender_pref, "Any"]))
 
@@ -846,11 +912,20 @@ def cancel_booking(request_id):
 @app.route("/my-rides")
 @login_required
 def my_rides():
+    cleanup_expired_rides()
     user_id = session["user_id"]
     rides = Ride.query.filter_by(driver_id=user_id)\
         .order_by(Ride.id.desc()).all()
 
-    return render_template("my_rides.html", rides=rides)
+    active_rides = [r for r in rides if not r.is_expired and r.status in ["Available", "Full"]]
+    past_rides = [r for r in rides if r.is_expired or r.status in ["Expired", "Completed", "Cancelled"]]
+
+    return render_template(
+        "my_rides.html",
+        rides=rides,
+        active_rides=active_rides,
+        past_rides=past_rides
+    )
 
 
 @app.route("/ride/<int:ride_id>/cancel", methods=["POST"])
@@ -887,6 +962,61 @@ def cancel_ride(ride_id):
     return redirect(url_for("my_rides"))
 
 
+@app.route("/ride/<int:ride_id>/delete", methods=["POST"])
+@login_required
+def delete_ride(ride_id):
+    ride = Ride.query.get_or_404(ride_id)
+    user_id = session["user_id"]
+    user = db.session.get(User, user_id)
+
+    if ride.driver_id != user_id and not (user and user.is_admin):
+        flash("Unauthorized action.", "error")
+        return redirect(url_for("my_rides"))
+
+    # Notify any accepted or pending passengers before deletion
+    for req in ride.requests:
+        if req.status in ["Pending", "Accepted"]:
+            notify_user(
+                req.passenger_id,
+                "Ride Cancelled & Removed",
+                f"The ride from {ride.source} to {ride.destination} scheduled for {ride.ride_date} at {ride.ride_time} was cancelled and deleted by the driver.",
+                category="ride_update",
+                related_ride_id=None
+            )
+
+    # Detach references from notifications and safety reports
+    Notification.query.filter_by(related_ride_id=ride.id).update({Notification.related_ride_id: None})
+    SafetyReport.query.filter_by(ride_id=ride.id).update({SafetyReport.ride_id: None})
+
+    db.session.delete(ride)
+    db.session.commit()
+    flash("Ride has been permanently deleted from campus listings.", "success")
+    return redirect(url_for("my_rides"))
+
+
+@app.route("/my-rides/clear-expired", methods=["POST"])
+@login_required
+def clear_expired_rides():
+    cleanup_expired_rides()
+    user_id = session["user_id"]
+    user_rides = Ride.query.filter_by(driver_id=user_id).all()
+    to_delete = [r for r in user_rides if r.is_expired or r.status in ["Expired", "Completed", "Cancelled"]]
+
+    count = len(to_delete)
+    for r in to_delete:
+        Notification.query.filter_by(related_ride_id=r.id).update({Notification.related_ride_id: None})
+        SafetyReport.query.filter_by(ride_id=r.id).update({SafetyReport.ride_id: None})
+        db.session.delete(r)
+
+    if count > 0:
+        db.session.commit()
+        flash(f"Successfully cleaned up {count} past/expired ride(s) from your dashboard.", "success")
+    else:
+        flash("No expired or past rides found to clear.", "info")
+
+    return redirect(url_for("my_rides"))
+
+
 @app.route("/ride/<int:ride_id>/complete", methods=["POST"])
 @login_required
 def complete_ride(ride_id):
@@ -912,12 +1042,12 @@ def complete_ride(ride_id):
                 req.passenger_id,
                 "Ride Completed! Rate Your Driver",
                 f"Your ride from {ride.source} to {ride.destination} is marked completed. Share your rating in My Bookings!",
-                category="ride_update",
+                category="booking",
                 related_ride_id=ride.id
             )
 
     db.session.commit()
-    flash("Ride marked as Completed! Thank you for facilitating campus mobility.", "success")
+    flash("Ride marked completed! Passengers have been prompted to leave reviews.", "success")
     return redirect(url_for("my_rides"))
 
 

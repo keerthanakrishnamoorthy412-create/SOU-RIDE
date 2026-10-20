@@ -70,12 +70,15 @@ def clean_db(app):
         db.session.add_all([driver, passenger, admin])
         db.session.commit()
 
+        from datetime import datetime, timedelta
+        future_date = (datetime.now() + timedelta(days=3)).strftime("%Y-%m-%d")
+
         # Create a sample ride (id=1)
         ride = Ride(
             driver_id=driver.id,
             source="Silver Oak University - Main Gate",
             destination="Vaishno Devi Circle",
-            ride_date="2026-10-15",
+            ride_date=future_date,
             ride_time="17:30",
             seats=3,
             total_seats=3,

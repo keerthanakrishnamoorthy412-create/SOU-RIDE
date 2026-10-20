@@ -17,6 +17,10 @@ env/
 instance/
 database_backup_original.db
 
+# Uploads (keep .gitkeep)
+static/uploads/id_cards/*
+!static/uploads/id_cards/.gitkeep
+
 # OS / Editor artifacts
 .DS_Store
 Thumbs.db

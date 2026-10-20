@@ -4,106 +4,194 @@
 {% block page_title %}My Rides Offered{% endblock %}
 
 {% block content %}
-<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
     <div>
         <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary);">Rides You Have Published</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted);">Manage passenger bookings, complete trips, or cancel scheduled rides</p>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Manage your active carpools, passenger bookings, and past ride history</p>
     </div>
-    <a href="{{ url_for('offer') }}" class="btn btn-primary btn-sm">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-        Offer New Ride
-    </a>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        {% if past_rides %}
+        <form method="POST" action="{{ url_for('clear_expired_rides') }}" onsubmit="return confirm('Clear all {{ past_rides | length }} expired / past ride(s) from your history?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="btn btn-outline btn-sm" style="color: #DC2626; border-color: #FECACA;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                Clear All Expired ({{ past_rides | length }})
+            </button>
+        </form>
+        {% endif %}
+
+        <a href="{{ url_for('offer') }}" class="btn btn-primary btn-sm">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+            Offer New Ride
+        </a>
+    </div>
 </div>
 
-{% if rides %}
-<div style="display: flex; flex-direction: column; gap: 20px;">
-    {% for ride in rides %}
-    <div class="card" style="padding: 24px;">
-        <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 16px;">
-            <div>
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
-                    <span class="status-pill status-{{ ride.status | lower }}">{{ ride.status }}</span>
-                    <span style="font-size: 0.82rem; color: var(--text-muted);">Published {{ ride.created_at[:10] }}</span>
-                </div>
-                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">
-                    {{ ride.source }} &rarr; {{ ride.destination }}
-                </h3>
-                <div style="font-size: 0.88rem; color: var(--text-secondary); margin-top: 4px;">
-                    📅 <strong>{{ ride.ride_date }}</strong> at <strong>{{ ride.ride_time }}</strong>
-                    • 🚗 {{ ride.vehicle_model or 'Standard Vehicle' }}
-                    • 💰 {% if ride.price == 0 %}Free Carpool{% else %}₹{{ "%.0f"|format(ride.price) }}/seat{% endif %}
-                </div>
-            </div>
+<!-- AUTO-EXPIRATION NOTICE BANNER -->
+<div style="background: var(--surface-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 18px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+    <span style="font-size: 1.2rem;">🕒</span>
+    <span style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">
+        <strong>Smart Campus Schedule:</strong> Rides whose departure date and time have passed are automatically marked as <strong>Expired</strong> and hidden from public search to ensure students only see active rides.
+    </span>
+</div>
 
-            <div style="text-align: right;">
-                <div style="font-size: 0.85rem; color: var(--text-muted);">Seat Capacity:</div>
-                <strong style="font-size: 1.15rem; color: {% if ride.seats > 0 %}#10B981{% else %}#EF4444{% endif %};">
-                    {{ ride.seats }} free of {{ ride.total_seats }} total
-                </strong>
-            </div>
-        </div>
+{% if active_rides %}
+<div style="margin-bottom: 36px;">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+        <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary);">Active & Upcoming Rides</h3>
+        <span class="status-pill status-available" style="font-size: 0.72rem;">{{ active_rides | length }} Active</span>
+    </div>
 
-        <!-- ACCEPTED PASSENGERS SECTION -->
-        <div style="background: var(--surface-subtle); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 18px; border: 1px solid var(--border-light);">
-            <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">
-                Confirmed Passengers ({{ ride.accepted_passengers | length }})
-            </div>
-            {% if ride.accepted_passengers %}
-            <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-                {% for p in ride.accepted_passengers %}
-                <div style="background: var(--surface-card); border: 1px solid var(--border-light); padding: 8px 14px; border-radius: var(--radius-sm); display: flex; align-items: center; gap: 10px;">
-                    <div class="user-avatar" style="width: 28px; height: 28px; font-size: 0.75rem;">{{ p.name[0] | upper }}</div>
-                    <div style="font-size: 0.85rem;">
-                        <strong>{{ p.name }}</strong>
-                        <div style="font-size: 0.74rem; color: var(--text-muted);">
-                            📞 {{ p.phone }} • ID: {{ p.student_id or 'N/A' }}
-                        </div>
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        {% for ride in active_rides %}
+        <div class="card" style="padding: 24px;">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                        <span class="status-pill status-{{ ride.status | lower }}">{{ ride.status }}</span>
+                        <span style="font-size: 0.82rem; color: var(--text-muted);">Published {{ ride.created_at[:10] }}</span>
+                    </div>
+                    <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">
+                        {{ ride.source }} &rarr; {{ ride.destination }}
+                    </h3>
+                    <div style="font-size: 0.88rem; color: var(--text-secondary); margin-top: 4px;">
+                        📅 <strong>{{ ride.ride_date }}</strong> at <strong>{{ ride.ride_time }}</strong>
+                        • 🚗 {{ ride.vehicle_model or 'Standard Vehicle' }}
+                        • 💰 {% if ride.price == 0 %}Free Carpool{% else %}₹{{ "%.0f"|format(ride.price) }}/seat{% endif %}
                     </div>
                 </div>
-                {% endfor %}
+
+                <div style="text-align: right;">
+                    <div style="font-size: 0.85rem; color: var(--text-muted);">Seat Capacity:</div>
+                    <strong style="font-size: 1.15rem; color: {% if ride.seats > 0 %}#10B981{% else %}#EF4444{% endif %};">
+                        {{ ride.seats }} free of {{ ride.total_seats }} total
+                    </strong>
+                </div>
             </div>
-            {% else %}
-            <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">
-                No passengers accepted yet.
+
+            <!-- ACCEPTED PASSENGERS SECTION -->
+            <div style="background: var(--surface-subtle); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 18px; border: 1px solid var(--border-light);">
+                <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">
+                    Confirmed Passengers ({{ ride.accepted_passengers | length }})
+                </div>
+                {% if ride.accepted_passengers %}
+                <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                    {% for p in ride.accepted_passengers %}
+                    <div style="background: var(--surface-card); border: 1px solid var(--border-light); padding: 8px 14px; border-radius: var(--radius-sm); display: flex; align-items: center; gap: 10px;">
+                        <div class="user-avatar" style="width: 28px; height: 28px; font-size: 0.75rem;">{{ p.name[0] | upper }}</div>
+                        <div style="font-size: 0.85rem;">
+                            <strong>{{ p.name }}</strong>
+                            <div style="font-size: 0.74rem; color: var(--text-muted);">
+                                📞 {{ p.phone }} • ID: {{ p.student_id or 'N/A' }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">
+                    No passengers accepted yet.
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
+
+            <!-- ACTION BUTTONS -->
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-top: 14px; border-top: 1px solid var(--border-subtle);">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <a href="{{ url_for('requests_view') }}" class="btn btn-outline btn-sm">
+                        Manage Requests
+                    </a>
+                    <a href="{{ url_for('ride_detail', ride_id=ride.id) }}" class="btn btn-secondary btn-sm">
+                        Public View
+                    </a>
+                </div>
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <!-- COMPLETE RIDE -->
+                    <form method="POST" action="{{ url_for('complete_ride', ride_id=ride.id) }}" onsubmit="return confirm('Confirm that this ride has been completed successfully?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-success btn-sm">
+                            ✓ Mark Completed
+                        </button>
+                    </form>
+
+                    <!-- CANCEL RIDE -->
+                    <form method="POST" action="{{ url_for('cancel_ride', ride_id=ride.id) }}" onsubmit="return confirm('Are you sure you want to cancel this ride? All accepted passengers will be notified immediately.');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-warning btn-sm">
+                            Cancel Ride
+                        </button>
+                    </form>
+
+                    <!-- DELETE RIDE -->
+                    <form method="POST" action="{{ url_for('delete_ride', ride_id=ride.id) }}" onsubmit="return confirm('Are you sure you want to permanently delete this ride? This action cannot be undone.');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 
-        <!-- ACTION BUTTONS -->
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-top: 14px; border-top: 1px solid var(--border-subtle);">
-            <div style="display: flex; gap: 10px;">
-                <a href="{{ url_for('requests_view') }}" class="btn btn-outline btn-sm">
-                    Manage Requests
-                </a>
-                <a href="{{ url_for('ride_detail', ride_id=ride.id) }}" class="btn btn-secondary btn-sm">
-                    Public View
-                </a>
-            </div>
-
-            {% if ride.status in ['Available', 'Full'] %}
-            <div style="display: flex; gap: 10px;">
-                <!-- COMPLETE RIDE -->
-                <form method="POST" action="{{ url_for('complete_ride', ride_id=ride.id) }}" onsubmit="return confirm('Confirm that this ride has been completed successfully?');">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <button type="submit" class="btn btn-success btn-sm">
-                        ✓ Mark Completed
-                    </button>
-                </form>
-
-                <!-- CANCEL RIDE -->
-                <form method="POST" action="{{ url_for('cancel_ride', ride_id=ride.id) }}" onsubmit="return confirm('Are you sure you want to cancel this ride? All accepted passengers will be notified immediately.');">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <button type="submit" class="btn btn-danger btn-sm">
-                        Cancel Ride
-                    </button>
-                </form>
-            </div>
-            {% endif %}
+<!-- PAST & EXPIRED RIDES SECTION -->
+{% if past_rides %}
+<div style="margin-top: 32px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary);">Past & Expired Rides</h3>
+            <span class="status-pill status-rejected" style="font-size: 0.72rem; background: #FEF3C7; color: #92400E; border-color: #FDE68A;">{{ past_rides | length }} Out of Date</span>
         </div>
     </div>
-    {% endfor %}
+
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        {% for ride in past_rides %}
+        <div class="card" style="padding: 18px 24px; opacity: 0.88; background: var(--surface-subtle);">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+                        <span class="status-pill {% if ride.status == 'Expired' %}status-rejected{% elif ride.status == 'Completed' %}status-available{% else %}status-pending{% endif %}" style="font-size: 0.72rem;">
+                            {{ ride.status }}
+                        </span>
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">
+                            Scheduled for {{ ride.ride_date }} at {{ ride.ride_time }}
+                        </span>
+                    </div>
+                    <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">
+                        {{ ride.source }} &rarr; {{ ride.destination }}
+                    </h4>
+                    <span style="font-size: 0.78rem; color: var(--text-muted);">
+                        🚗 {{ ride.vehicle_model or 'Vehicle' }} • {{ ride.accepted_passengers | length }} passenger(s) joined
+                    </span>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <a href="{{ url_for('ride_detail', ride_id=ride.id) }}" class="btn btn-secondary btn-sm" style="font-size: 0.8rem;">
+                        View Details
+                    </a>
+
+                    <!-- DELETE PAST RIDE -->
+                    <form method="POST" action="{{ url_for('delete_ride', ride_id=ride.id) }}" onsubmit="return confirm('Delete this expired ride from your history?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-danger btn-sm" style="font-size: 0.8rem; padding: 6px 12px;" title="Delete ride">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </div>
-{% else %}
+{% endif %}
+
+{% if not active_rides and not past_rides %}
 <div class="card" style="text-align: center; padding: 50px 20px; color: var(--text-muted);">
     <div style="font-size: 2.5rem; margin-bottom: 12px;">🚗</div>
     <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-bottom: 6px;">You haven't offered any rides yet</h3>

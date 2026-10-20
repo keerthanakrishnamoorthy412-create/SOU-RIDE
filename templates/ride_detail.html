@@ -144,9 +144,21 @@
                 <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 14px;">
                     Manage incoming passenger requests from your driver dashboard.
                 </p>
-                <a href="{{ url_for('requests_view') }}" class="btn btn-outline btn-sm" style="width: 100%;">
+                <a href="{{ url_for('requests_view') }}" class="btn btn-outline btn-sm" style="width: 100%; margin-bottom: 8px;">
                     View Passenger Requests
                 </a>
+                <div style="display: flex; gap: 8px;">
+                    {% if ride.status in ['Available', 'Full'] and not ride.is_expired %}
+                    <form method="POST" action="{{ url_for('cancel_ride', ride_id=ride.id) }}" onsubmit="return confirm('Cancel this ride? Passengers will be notified.');" style="flex: 1;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-warning btn-sm" style="width: 100%;">Cancel</button>
+                    </form>
+                    {% endif %}
+                    <form method="POST" action="{{ url_for('delete_ride', ride_id=ride.id) }}" onsubmit="return confirm('Are you sure you want to permanently delete this ride? This action cannot be undone.');" style="flex: 1;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-danger btn-sm" style="width: 100%;">Delete</button>
+                    </form>
+                </div>
             </div>
 
             {% elif existing_request and existing_request.status in ['Pending', 'Accepted'] %}
@@ -170,6 +182,22 @@
                 </p>
                 <a href="{{ url_for('my_bookings') }}" class="btn btn-secondary btn-sm" style="width: 100%;">
                     Manage in My Bookings
+                </a>
+            </div>
+
+            {% elif ride.status == 'Expired' or ride.is_expired %}
+            <div style="background: var(--warning-bg); border: 1px solid var(--warning-border); border-radius: var(--radius-md); padding: 18px; text-align: center;">
+                <span class="status-pill status-rejected" style="margin-bottom: 8px; background: #FEF3C7; color: #92400E; border-color: #FDE68A;">
+                    Expired Schedule
+                </span>
+                <strong style="color: var(--warning-text); font-size: 0.95rem; display: block; margin-top: 6px; margin-bottom: 6px;">
+                    This ride has expired
+                </strong>
+                <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 14px;">
+                    The departure time for this ride has passed and it is no longer taking seat bookings.
+                </p>
+                <a href="{{ url_for('search') }}" class="btn btn-primary btn-sm" style="width: 100%;">
+                    Search Active Campus Rides &rarr;
                 </a>
             </div>
 
