@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}My Rides | SOU Ride{% endblock %}
+{% block page_title %}My Rides Offered{% endblock %}
+
+{% block content %}
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+    <div>
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary);">Rides You Have Published</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Manage passenger bookings, complete trips, or cancel scheduled rides</p>
+    </div>
+    <a href="{{ url_for('offer') }}" class="btn btn-primary btn-sm">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+        Offer New Ride
+    </a>
+</div>
+
+{% if rides %}
+<div style="display: flex; flex-direction: column; gap: 20px;">
+    {% for ride in rides %}
+    <div class="card" style="padding: 24px;">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 16px;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                    <span class="status-pill status-{{ ride.status | lower }}">{{ ride.status }}</span>
+                    <span style="font-size: 0.82rem; color: var(--text-muted);">Published {{ ride.created_at[:10] }}</span>
+                </div>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">
+                    {{ ride.source }} &rarr; {{ ride.destination }}
+                </h3>
+                <div style="font-size: 0.88rem; color: var(--text-secondary); margin-top: 4px;">
+                    📅 <strong>{{ ride.ride_date }}</strong> at <strong>{{ ride.ride_time }}</strong>
+                    • 🚗 {{ ride.vehicle_model or 'Standard Vehicle' }}
+                    • 💰 {% if ride.price == 0 %}Free Carpool{% else %}₹{{ "%.0f"|format(ride.price) }}/seat{% endif %}
+                </div>
+            </div>
+
+            <div style="text-align: right;">
+                <div style="font-size: 0.85rem; color: var(--text-muted);">Seat Capacity:</div>
+                <strong style="font-size: 1.15rem; color: {% if ride.seats > 0 %}#10B981{% else %}#EF4444{% endif %};">
+                    {{ ride.seats }} free of {{ ride.total_seats }} total
+                </strong>
+            </div>
+        </div>
+
+        <!-- ACCEPTED PASSENGERS SECTION -->
+        <div style="background: var(--surface-subtle); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 18px; border: 1px solid var(--border-light);">
+            <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">
+                Confirmed Passengers ({{ ride.accepted_passengers | length }})
+            </div>
+            {% if ride.accepted_passengers %}
+            <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                {% for p in ride.accepted_passengers %}
+                <div style="background: var(--surface-card); border: 1px solid var(--border-light); padding: 8px 14px; border-radius: var(--radius-sm); display: flex; align-items: center; gap: 10px;">
+                    <div class="user-avatar" style="width: 28px; height: 28px; font-size: 0.75rem;">{{ p.name[0] | upper }}</div>
+                    <div style="font-size: 0.85rem;">
+                        <strong>{{ p.name }}</strong>
+                        <div style="font-size: 0.74rem; color: var(--text-muted);">
+                            📞 {{ p.phone }} • ID: {{ p.student_id or 'N/A' }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">
+                No passengers accepted yet.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-top: 14px; border-top: 1px solid var(--border-subtle);">
+            <div style="display: flex; gap: 10px;">
+                <a href="{{ url_for('requests_view') }}" class="btn btn-outline btn-sm">
+                    Manage Requests
+                </a>
+                <a href="{{ url_for('ride_detail', ride_id=ride.id) }}" class="btn btn-secondary btn-sm">
+                    Public View
+                </a>
+            </div>
+
+            {% if ride.status in ['Available', 'Full'] %}
+            <div style="display: flex; gap: 10px;">
+                <!-- COMPLETE RIDE -->
+                <form method="POST" action="{{ url_for('complete_ride', ride_id=ride.id) }}" onsubmit="return confirm('Confirm that this ride has been completed successfully?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-success btn-sm">
+                        ✓ Mark Completed
+                    </button>
+                </form>
+
+                <!-- CANCEL RIDE -->
+                <form method="POST" action="{{ url_for('cancel_ride', ride_id=ride.id) }}" onsubmit="return confirm('Are you sure you want to cancel this ride? All accepted passengers will be notified immediately.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        Cancel Ride
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card" style="text-align: center; padding: 50px 20px; color: var(--text-muted);">
+    <div style="font-size: 2.5rem; margin-bottom: 12px;">🚗</div>
+    <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-bottom: 6px;">You haven't offered any rides yet</h3>
+    <p style="font-size: 0.92rem; max-width: 480px; margin: 0 auto 18px;">
+        Going to Silver Oak University tomorrow? Offer your empty seats to help friends and split fuel expenses.
+    </p>
+    <a href="{{ url_for('offer') }}" class="btn btn-primary">Offer Your First Ride</a>
+</div>
+{% endif %}
+{% endblock %}

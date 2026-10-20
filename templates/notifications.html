@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications | SOU Ride{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+
+{% block content %}
+<div style="max-width: 820px; margin: 0 auto;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+        <div>
+            <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary);">Notification Center</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Stay updated on booking requests, ride approvals, and safety alerts</p>
+        </div>
+
+        {% if unread_notifs > 0 %}
+        <form method="POST" action="{{ url_for('mark_all_notifications_read') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="btn btn-secondary btn-sm">
+                Mark All as Read
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <!-- NOTIFICATION CHANNEL TRANSPARENCY NOTICE -->
+    <div style="background: var(--info-bg); border: 1px solid var(--info-border); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 24px; font-size: 0.85rem; color: var(--info-text); display: flex; align-items: flex-start; gap: 10px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <div>
+            <strong>Delivery Channel Note:</strong> In-app notifications are generated and stored in real-time in the application database. External SMS/Email dispatch is configured to mock mode for student privacy unless external Twilio/SMTP credentials are provided in <code>.env</code>.
+        </div>
+    </div>
+
+    {% if notifs %}
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% for n in notifs %}
+        <div class="card" style="padding: 18px 22px; display: flex; align-items: flex-start; gap: 16px; border-left: 4px solid {% if n.is_read %}var(--border-light){% else %}var(--primary-600){% endif %}; background: {% if n.is_read %}var(--surface-card){% else %}var(--primary-50){% endif %};">
+            <div class="stat-icon" style="width: 40px; height: 40px; border-radius: 50%; font-size: 1rem; flex-shrink: 0; background: {% if n.is_read %}var(--surface-subtle){% else %}var(--primary-100){% endif %}; color: var(--primary-700);">
+                {% if n.category == 'booking' %}🎫
+                {% elif n.category == 'ride_update' %}🚗
+                {% elif n.category == 'safety' %}🛡️
+                {% else %}📢{% endif %}
+            </div>
+
+            <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
+                    <strong style="font-size: 0.96rem; color: var(--text-primary);">{{ n.title }}</strong>
+                    <span style="font-size: 0.74rem; color: var(--text-muted);">{{ n.created_at }}</span>
+                </div>
+                <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5;">
+                    {{ n.message }}
+                </p>
+                {% if n.related_ride_id %}
+                <div style="margin-top: 8px;">
+                    <a href="{{ url_for('ride_detail', ride_id=n.related_ride_id) }}" style="font-size: 0.8rem; font-weight: 700; color: var(--primary-600);">
+                        View Associated Ride &rarr;
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="text-align: center; padding: 50px 20px; color: var(--text-muted);">
+        <div style="font-size: 2.5rem; margin-bottom: 12px;">🔔</div>
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-bottom: 6px;">No notifications yet</h3>
+        <p style="font-size: 0.92rem;">You're completely caught up! We will alert you when you receive ride requests or booking updates.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

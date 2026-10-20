@@ -1,0 +1,25 @@
+# Python cache & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Environment secrets
+.env
+.env.local
+
+# Virtual Environments
+venv/
+env/
+.venv/
+
+# Backup databases (keep primary database.db for ready-to-run demo)
+instance/
+database_backup_original.db
+
+# OS / Editor artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

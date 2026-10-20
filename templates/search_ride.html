@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Find a Ride | SOU Ride{% endblock %}
+{% block page_title %}Find a Ride{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 28px; padding: 28px;">
+    <form method="GET" action="{{ url_for('search') }}">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="sourceInput">Pickup Location</label>
+                <input type="text" name="source" id="sourceInput" class="form-control" placeholder="e.g. Silver Oak University, Gota" value="{{ source }}">
+                <div class="location-chips">
+                    <span class="location-chip" data-target-input="sourceInput" data-location-value="Silver Oak University - Main Gate">SOU Main Gate</span>
+                    <span class="location-chip" data-target-input="sourceInput" data-location-value="Gota Chokdi">Gota Chokdi</span>
+                    <span class="location-chip" data-target-input="sourceInput" data-location-value="Vaishno Devi Circle">Vaishno Devi</span>
+                    <span class="location-chip" data-target-input="sourceInput" data-location-value="Chandkheda">Chandkheda</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="destInput">Drop-off Destination</label>
+                <input type="text" name="destination" id="destInput" class="form-control" placeholder="e.g. Geeta Mandir, Gandhinagar, Vastrapur" value="{{ destination }}">
+                <div class="location-chips">
+                    <span class="location-chip" data-target-input="destInput" data-location-value="Silver Oak University Campus">SOU Campus</span>
+                    <span class="location-chip" data-target-input="destInput" data-location-value="Geeta Mandir Bus Stand">Geeta Mandir</span>
+                    <span class="location-chip" data-target-input="destInput" data-location-value="Gandhinagar - Infocity">Infocity</span>
+                    <span class="location-chip" data-target-input="destInput" data-location-value="Vastrapur Lake">Vastrapur</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row" style="margin-top: 10px;">
+            <div class="form-group">
+                <label for="ride_date">Date of Travel (Optional)</label>
+                <input type="date" name="ride_date" id="ride_date" class="form-control" value="{{ ride_date }}">
+            </div>
+
+            <div class="form-group">
+                <label for="gender_pref">Passenger Preference</label>
+                <select name="gender_preference" id="gender_pref" class="form-control">
+                    <option value="Any" {% if gender_pref == 'Any' %}selected{% endif %}>All Rides (No Preference)</option>
+                    <option value="Women Only" {% if gender_pref == 'Women Only' %}selected{% endif %}>Women Co-passengers Only</option>
+                    <option value="Men Only" {% if gender_pref == 'Men Only' %}selected{% endif %}>Men Co-passengers Only</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 8px;">
+            <button type="submit" class="btn btn-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                Search Rides
+            </button>
+            <a href="{{ url_for('search') }}" class="btn btn-secondary">Reset Filters</a>
+        </div>
+    </form>
+</div>
+
+<!-- LEAFLET ROUTE MAP PREVIEW -->
+<div class="map-container" id="leafletRouteMap"
+     data-source="{{ source or 'Silver Oak University' }}"
+     data-destination="{{ destination or 'Geeta Mandir' }}">
+    <div class="map-fallback">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--primary-600)" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 6.9 8 11.7z"/></svg>
+        <strong>Ahmedabad University Transit Route</strong>
+        <p style="font-size: 0.85rem; max-width: 480px;">
+            Showing campus routes connecting Silver Oak University (Gota, SG Highway) with key hubs across Ahmedabad and Gandhinagar.
+        </p>
+    </div>
+</div>
+
+<!-- RIDES RESULTS -->
+<div style="margin-top: 28px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">
+            Available Rides ({{ rides | length }})
+        </h3>
+        <span style="font-size: 0.82rem; color: var(--text-muted);">
+            Real-time database records • Zero fabricated routes
+        </span>
+    </div>
+
+    {% if rides %}
+    <div class="rides-grid">
+        {% for ride in rides %}
+        <div class="ride-card">
+            <div class="ride-card-header">
+                <div class="driver-info">
+                    <div class="driver-avatar">{{ ride.driver.name[0] | upper }}</div>
+                    <div class="driver-meta">
+                        <h4>
+                            {{ ride.driver.name }}
+                            {% if ride.driver.is_verified %}
+                            <span class="{{ ride.driver.verification_badge_class }}" style="font-size: 0.65rem; padding: 1px 6px;">{{ ride.driver.verification_badge_label }}</span>
+                            {% endif %}
+                        </h4>
+                        <span>{{ ride.driver.department }}</span>
+                    </div>
+                </div>
+                <div class="rating-badge">★ {{ ride.driver.average_rating }}</div>
+            </div>
+
+            <div class="route-timeline">
+                <div class="route-point">
+                    <span class="point-label">Pickup Point</span>
+                    <div class="point-name">{{ ride.source }}</div>
+                </div>
+                <div class="route-point destination">
+                    <span class="point-label">Drop-off Destination</span>
+                    <div class="point-name">{{ ride.destination }}</div>
+                </div>
+            </div>
+
+            <div class="ride-amenities">
+                {% if ride.vehicle_model %}
+                <span class="amenity-chip">🚗 {{ ride.vehicle_model }}</span>
+                {% endif %}
+                {% if ride.ac_available %}
+                <span class="amenity-chip">❄️ AC</span>
+                {% endif %}
+                {% if ride.luggage_allowed %}
+                <span class="amenity-chip">🎒 Bag Allowed</span>
+                {% endif %}
+                {% if ride.gender_preference != 'Any' %}
+                <span class="amenity-chip amenity-gender">👤 {{ ride.gender_preference }}</span>
+                {% endif %}
+            </div>
+
+            <div class="ride-card-details">
+                <div class="ride-meta-item">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    {{ ride.ride_date }} at {{ ride.ride_time }}
+                </div>
+                <div class="ride-meta-item" style="color: #059669;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C2.1 10.7 2 11 2 11.4V16c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+                    {{ ride.seats }} seat(s) free
+                </div>
+            </div>
+
+            <div class="ride-card-footer">
+                <div class="price-tag">
+                    <span>Contribution</span>
+                    <strong>{% if ride.price == 0 %}Free Carpool{% else %}₹{{ "%.0f"|format(ride.price) }}/seat{% endif %}</strong>
+                </div>
+                <a href="{{ url_for('ride_detail', ride_id=ride.id) }}" class="btn btn-primary btn-sm">
+                    Select & Request
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="text-align: center; padding: 50px 20px;">
+        <div style="font-size: 2.5rem; margin-bottom: 12px;">🔍</div>
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-bottom: 6px;">No matching rides found</h3>
+        <p style="color: var(--text-muted); font-size: 0.95rem; max-width: 480px; margin: 0 auto 18px;">
+            Try broadening your search or clearing the date filter to view all upcoming trips to Silver Oak University.
+        </p>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <a href="{{ url_for('search') }}" class="btn btn-secondary btn-sm">Clear Search Filters</a>
+            <a href="{{ url_for('offer') }}" class="btn btn-primary btn-sm">Offer This Route Instead</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+
+{% block title %}Profile & Ratings | SOU Ride{% endblock %}
+{% block page_title %}Student Profile & Ratings{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 28px;" class="profile-layout">
+    <!-- LEFT: PROFILE SUMMARY & VERIFICATION -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="card" style="text-align: center; padding: 32px 20px;">
+            <div class="user-avatar" style="width: 76px; height: 76px; font-size: 2rem; margin: 0 auto 16px;">
+                {{ user.name[0] | upper }}
+            </div>
+            <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px;">
+                {{ user.name }}
+            </h3>
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+                {{ user.department }}
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <span class="{{ user.verification_badge_class }}" style="font-size: 0.82rem; padding: 4px 12px;">
+                    {{ user.verification_badge_label }}
+                </span>
+                {% if user.is_temporary_student %}
+                <div style="margin-top: 6px;">
+                    <span class="temp-badge-tag">1st Sem Temp ID: {{ user.student_id }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div style="background: var(--primary-50); border-radius: var(--radius-md); padding: 14px; margin-bottom: 18px;">
+                <div class="rating-badge" style="font-size: 1.1rem; padding: 4px 12px; margin-bottom: 4px;">
+                    ★ {{ user.average_rating }}
+                </div>
+                <div style="font-size: 0.78rem; color: var(--text-muted);">
+                    Based on {{ user.review_count }} verified ride reviews
+                </div>
+            </div>
+
+            <div style="text-align: left; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.8;">
+                <div>
+                    <strong>Enrollment ID:</strong> 
+                    {{ user.student_id or 'Not specified' }}
+                    {% if user.is_temporary_student %}
+                    <span class="temp-badge-tag" style="margin-left: 4px;">Temp 'T'</span>
+                    {% endif %}
+                </div>
+                <div><strong>Email:</strong> {{ user.email }}</div>
+                <div><strong>Phone:</strong> {{ user.phone or 'Not specified' }}</div>
+                {% if user.emergency_contact %}
+                <div><strong>Emergency:</strong> {{ user.emergency_contact }}</div>
+                {% endif %}
+                <div><strong>Role:</strong> {{ user.role | capitalize }}</div>
+                <div>
+                    <strong>ID Verification:</strong>
+                    <span style="font-weight: 700; text-transform: capitalize; color: {% if user.is_verified %}#059669{% elif user.id_verification_status == 'pending' %}#D97706{% elif user.id_verification_status == 'rejected' %}#DC2626{% else %}#64748B{% endif %};">
+                        {{ user.id_verification_status }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- REVIEWS RECEIVED -->
+        <div class="card" style="padding: 24px;">
+            <h4 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 14px; color: var(--text-primary);">
+                Recent Reviews Received ({{ reviews | length }})
+            </h4>
+
+            {% if reviews %}
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+                {% for r in reviews %}
+                <div style="border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <strong style="font-size: 0.88rem;">{{ r.reviewer.name }}</strong>
+                        <span class="rating-badge">★ {{ r.rating }}.0</span>
+                    </div>
+                    {% if r.comment %}
+                    <p style="font-size: 0.82rem; color: var(--text-secondary); font-style: italic;">
+                        "{{ r.comment }}"
+                    </p>
+                    {% endif %}
+                    <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+                        Trip: {{ r.ride.source }} &rarr; {{ r.ride.destination }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">
+                No reviews received yet. Complete trips to build your community trust score.
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- RIGHT: EDIT PROFILE & ID CARD VERIFICATION -->
+    <div style="display: flex; flex-direction: column; gap: 28px;">
+        
+        <!-- SECTION 1: PHOTO ID CARD VERIFICATION (NEW FEATURE) -->
+        <div class="card" style="padding: 32px; border-left: 4px solid var(--primary-600);">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap;">
+                <div>
+                    <span class="section-tag">Campus Identity & Safety</span>
+                    <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); margin-top: 4px;">
+                        Student ID Card Verification
+                    </h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
+                        Upload your Silver Oak University ID card or 1st semester temporary admission slip to verify your account
+                    </p>
+                </div>
+                <div>
+                    <span class="{{ user.verification_badge_class }}" style="padding: 5px 12px; font-size: 0.85rem;">
+                        {{ user.verification_badge_label }}
+                    </span>
+                </div>
+            </div>
+
+            {% if user.is_verified and not user.id_card_image and user.has_university_email %}
+            <!-- VERIFIED VIA INSTITUTIONAL EMAIL -->
+            <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: var(--radius-md); padding: 18px; display: flex; align-items: center; gap: 14px;">
+                <div style="font-size: 1.8rem;">🎓</div>
+                <div>
+                    <strong style="color: #065F46; font-size: 0.95rem; display: block;">Instant Institutional Verification Active</strong>
+                    <p style="font-size: 0.84rem; color: #047857; margin-top: 2px;">
+                        Your account is verified directly via your official university email (<code>{{ user.email }}</code>). No physical ID card upload is required.
+                    </p>
+                </div>
+            </div>
+
+            {% elif user.id_verification_status == 'verified' %}
+            <!-- VERIFIED VIA ID CARD -->
+            <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: var(--radius-md); padding: 20px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+                    <div>
+                        <strong style="color: #065F46; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                            ✓ Student ID Card Verified by Campus Moderation
+                            {% if user.is_temporary_student %}
+                            <span class="temp-badge-tag">1st Sem Temporary (T-Prefix)</span>
+                            {% endif %}
+                        </strong>
+                        <p style="font-size: 0.85rem; color: #047857; margin-top: 4px;">
+                            Enrollment Number: <strong>{{ user.student_id }}</strong> • Category: <strong>{{ user.student_type | capitalize }}</strong>
+                        </p>
+                        <div style="font-size: 0.78rem; color: #065F46; margin-top: 2px;">
+                            Verified on file. Your campus rides and booking requests display the verified badge to all SOU members.
+                        </div>
+                    </div>
+                    {% if user.id_card_image %}
+                    <div>
+                        <a href="{{ url_for('static', filename='uploads/id_cards/' + user.id_card_image) }}" target="_blank" title="Click to view full photo">
+                            <img src="{{ url_for('static', filename='uploads/id_cards/' + user.id_card_image) }}" alt="Verified ID Card" class="id-card-preview-thumb">
+                        </a>
+                        <div style="font-size: 0.7rem; color: var(--text-muted); text-align: center; margin-top: 3px;">Verified Photo</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% elif user.id_verification_status == 'pending' %}
+            <!-- PENDING REVIEW -->
+            <div style="background: var(--warning-bg); border: 1px solid var(--warning-border); border-radius: var(--radius-md); padding: 20px;">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                    <div>
+                        <strong style="color: var(--warning-text); font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                            ⏳ ID Card Photo Under Campus Review
+                            {% if user.is_temporary_student %}
+                            <span class="temp-badge-tag">Temporary Student (T-Prefix)</span>
+                            {% endif %}
+                        </strong>
+                        <p style="font-size: 0.85rem; color: var(--warning-text); margin-top: 4px; line-height: 1.5;">
+                            Submitted Enrollment ID: <strong>{{ user.student_id }}</strong><br>
+                            Our campus safety moderation team is reviewing your uploaded ID card against university enrollment records. You will receive an in-app notification once approved.
+                        </p>
+                        <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 6px;">
+                            Submitted at: {{ user.id_submitted_at }}
+                        </div>
+                    </div>
+                    {% if user.id_card_image %}
+                    <div>
+                        <a href="{{ url_for('static', filename='uploads/id_cards/' + user.id_card_image) }}" target="_blank" title="Click to view uploaded ID card">
+                            <img src="{{ url_for('static', filename='uploads/id_cards/' + user.id_card_image) }}" alt="Submitted ID Card" class="id-card-preview-thumb">
+                        </a>
+                        <div style="font-size: 0.7rem; color: var(--text-muted); text-align: center; margin-top: 3px;">Submitted ID</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% else %}
+            <!-- UNVERIFIED OR REJECTED: SHOW UPLOAD FORM -->
+                {% if user.id_verification_status == 'rejected' %}
+                <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: var(--radius-md); padding: 16px; margin-bottom: 20px;">
+                    <strong style="color: #991B1B; font-size: 0.95rem; display: block; margin-bottom: 4px;">
+                        ✕ Previous Verification Declined
+                    </strong>
+                    <p style="font-size: 0.85rem; color: #7F1D1D; line-height: 1.5;">
+                        <strong>Campus Moderation Feedback:</strong> {{ user.id_rejection_reason or 'Photo was blurry or enrollment number did not match.' }}
+                    </p>
+                    <div style="font-size: 0.8rem; color: #991B1B; margin-top: 6px;">
+                        Please review the requirements below and upload a clear, legible photo of your SOU ID card or provisional slip.
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- INFORMATION FOR TEMPORARY / 1ST SEM STUDENTS -->
+                <div style="background: #F3F0FF; border: 1px solid var(--primary-200); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 20px; font-size: 0.85rem; color: var(--primary-900);">
+                    <strong>💡 Attention 1st Semester / Temporary Students:</strong><br>
+                    • If you do not have a university email address yet, you can verify using your <strong>provisional ID card</strong> or <strong>admission fee receipt</strong>.<br>
+                    • If your temporary enrollment number begins with <strong>'T'</strong> (e.g. <code>T2501030600023</code>), enter it with the 'T' intact so you receive the 1st Semester Temporary Verified badge.
+                </div>
+
+                <form method="POST" action="{{ url_for('verify_id_card') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="verify_student_id">SOU Enrollment Number</label>
+                            {{ id_form.student_id(class="form-control", id="verify_student_id", placeholder="e.g. 2501030600029 or T2501030600023") }}
+                            <div class="form-text">Enter your 13-digit enrollment number, or temporary number starting with 'T'.</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="verify_student_type">Student Enrollment Category</label>
+                            {{ id_form.student_type(class="form-control", id="verify_student_type") }}
+                            <div class="form-text">Select '1st Semester / Temporary' if your number starts with 'T'.</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_card_image">College ID Card Photo (Front)</label>
+                        {{ id_form.id_card_image(class="form-control", id="id_card_image", accept="image/png, image/jpeg, image/jpg, image/webp") }}
+                        <div class="form-text" style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                            <span>📸 Accepted: JPG, PNG, WebP (Max 5MB). Ensure student name, photo, and enrollment ID are clearly readable.</span>
+                        </div>
+                    </div>
+
+                    <!-- PHOTO PREVIEW CONTAINER -->
+                    <div id="imagePreviewBox" style="display: none; margin-bottom: 18px; padding: 12px; background: var(--surface-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">Selected Image Preview:</span>
+                        <img id="imagePreview" src="" alt="ID Preview" style="max-height: 160px; border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="padding: 12px 24px; font-size: 0.95rem;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Submit ID for Authenticity Check & Verification &rarr;
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+
+        <!-- SECTION 2: EDIT PROFILE FORM -->
+        <div class="card" style="padding: 32px;">
+            <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); margin-bottom: 6px;">
+                Edit Profile Information
+            </h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 24px;">
+                Update your contact details, academic department, and campus safety information
+            </p>
+
+            <form method="POST" action="{{ url_for('profile') }}">
+                {{ form.hidden_tag() }}
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name">Full Name</label>
+                        {{ form.name(class="form-control", id="name") }}
+                        {% if form.name.errors %}
+                        <div class="form-error">{{ form.name.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Mobile (WhatsApp)</label>
+                        {{ form.phone(class="form-control", id="phone") }}
+                        {% if form.phone.errors %}
+                        <div class="form-error">{{ form.phone.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="student_id">Student Enrollment ID</label>
+                        {{ form.student_id(class="form-control", id="student_id") }}
+                        {% if form.student_id.errors %}
+                        <div class="form-error">{{ form.student_id.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="department">Department / Branch</label>
+                        {{ form.department(class="form-control", id="department") }}
+                        {% if form.department.errors %}
+                        <div class="form-error">{{ form.department.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="emergency_contact">Emergency Contact Mobile</label>
+                    {{ form.emergency_contact(class="form-control", id="emergency_contact", placeholder="Guardian / Campus Friend Mobile") }}
+                    <div class="form-text">Shared only with campus security during urgent incidents.</div>
+                    {% if form.emergency_contact.errors %}
+                    <div class="form-error">{{ form.emergency_contact.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="bio">About Me & Regular Commutes</label>
+                    {{ form.bio(class="form-control", id="bio", rows=3, placeholder="e.g. 3rd year Computer Engineering student commuting daily from Chandkheda to Block A.") }}
+                    {% if form.bio.errors %}
+                    <div class="form-error">{{ form.bio.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="padding: 12px 24px; font-size: 0.95rem;">
+                    Save Profile Changes
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Live Image Preview for ID card upload
+const idCardInput = document.getElementById('id_card_image');
+const previewBox = document.getElementById('imagePreviewBox');
+const previewImg = document.getElementById('imagePreview');
+
+if (idCardInput && previewBox && previewImg) {
+    idCardInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                previewImg.src = evt.target.result;
+                previewBox.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            previewBox.style.display = 'none';
+        }
+    });
+}
+</script>
+
+<style>
+@media (max-width: 900px) {
+    .profile-layout {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
+{% endblock %}

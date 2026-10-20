@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Moderation | SOU Ride{% endblock %}
+{% block page_title %}Campus Transit Moderation{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 32px;">
+
+    <!-- ADMIN METRICS -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-content">
+                <div class="stat-label">Total Users</div>
+                <div class="stat-value">{{ total_users }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: #ECFDF5; color: #10B981;">🚗</div>
+            <div class="stat-content">
+                <div class="stat-label">Total Rides</div>
+                <div class="stat-value">{{ total_rides }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: {% if pending_id_verifications > 0 %}#F3E8FF; color: #7C3AED;{% else %}#F5F3FF; color: var(--primary-600);{% endif %}">🪪</div>
+            <div class="stat-content">
+                <div class="stat-label">Pending ID Photos</div>
+                <div class="stat-value" style="{% if pending_id_verifications > 0 %}color: #7C3AED;{% endif %}">{{ pending_id_verifications }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: {% if pending_reports > 0 %}#FEF2F2; color: #EF4444;{% else %}#F5F3FF; color: var(--primary-600);{% endif %}">🛡️</div>
+            <div class="stat-content">
+                <div class="stat-label">Pending Reports</div>
+                <div class="stat-value" style="{% if pending_reports > 0 %}color: #EF4444;{% endif %}">{{ pending_reports }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 1: ID CARD PHOTO VERIFICATION REQUESTS (NEW FEATURE) -->
+    <div class="card" style="padding: 28px; border-left: 4px solid var(--primary-600);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <span class="section-tag">Photo ID Authenticity Queue</span>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-top: 4px;">
+                    Student ID Card Photo Verification Requests
+                </h3>
+                <p style="font-size: 0.82rem; color: var(--text-muted);">
+                    Inspect uploaded ID cards & 1st sem temporary admission slips (T-Prefix) to approve or reject verified campus status
+                </p>
+            </div>
+            {% if pending_id_verifications > 0 %}
+            <span class="status-pill status-pending" style="font-size: 0.85rem; padding: 4px 12px;">
+                {{ pending_id_verifications }} Pending Review
+            </span>
+            {% endif %}
+        </div>
+
+        {% if id_verification_users %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Enrollment No.</th>
+                        <th>Category</th>
+                        <th>ID Photo</th>
+                        <th>Submitted At</th>
+                        <th>Status</th>
+                        <th>Moderation Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in id_verification_users %}
+                    <tr>
+                        <td>
+                            <strong>{{ u.name }}</strong>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ u.email }}</div>
+                            <div style="font-size: 0.72rem; color: var(--text-muted);">{{ u.department }}</div>
+                        </td>
+                        <td>
+                            <strong style="font-family: monospace; font-size: 0.95rem;">{{ u.student_id }}</strong>
+                            {% if u.is_temporary_student %}
+                            <div style="margin-top: 2px;">
+                                <span class="temp-badge-tag">1st Sem Temp ('T')</span>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span style="font-size: 0.8rem; font-weight: 700; text-transform: capitalize;">
+                                {{ u.student_type }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if u.id_card_image %}
+                            <img src="{{ url_for('static', filename='uploads/id_cards/' + u.id_card_image) }}" 
+                                 alt="ID Card Photo" 
+                                 class="id-card-preview-thumb"
+                                 onclick="openImageLightbox('{{ url_for('static', filename='uploads/id_cards/' + u.id_card_image) }}', '{{ u.name }} ({{ u.student_id }})')"
+                                 title="Click to inspect photo">
+                            {% else %}
+                            <span style="color: var(--text-muted); font-size: 0.78rem;">No Photo</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-size: 0.78rem; color: var(--text-muted);">
+                            {{ u.id_submitted_at or '—' }}
+                        </td>
+                        <td>
+                            {% if u.id_verification_status == 'verified' %}
+                            <span class="verified-chip">✓ Verified</span>
+                            {% elif u.id_verification_status == 'pending' %}
+                            <span class="status-pill status-pending">Pending Review</span>
+                            {% elif u.id_verification_status == 'rejected' %}
+                            <span class="status-pill status-rejected" title="{{ u.id_rejection_reason }}">Rejected</span>
+                            {% else %}
+                            <span class="unverified-chip">Unverified</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                                {% if u.id_verification_status != 'verified' %}
+                                <form method="POST" action="{{ url_for('admin_approve_id_verification', user_id=u.id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <button type="submit" class="btn btn-success btn-sm" style="font-size: 0.75rem; padding: 5px 10px;">
+                                        ✓ Approve
+                                    </button>
+                                </form>
+                                {% endif %}
+
+                                <button type="button" 
+                                        class="btn btn-outline btn-sm" 
+                                        style="font-size: 0.75rem; padding: 5px 10px; color: #DC2626 !important; border-color: #FECACA;"
+                                        onclick="openRejectModal('{{ u.id }}', '{{ u.name }}')">
+                                    ✕ Reject
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="color: var(--text-muted); font-size: 0.9rem; font-style: italic; padding: 10px 0;">
+            No student ID card photos have been submitted for verification yet.
+        </p>
+        {% endif %}
+    </div>
+
+    <!-- TAB 2: ALL REGISTERED COMMUNITY USERS -->
+    <div class="card" style="padding: 28px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <div>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">All Campus Community Accounts</h3>
+                <p style="font-size: 0.82rem; color: var(--text-muted);">Overview of all students, faculty, and administrators</p>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User Name</th>
+                        <th>Email / Domain</th>
+                        <th>Enrollment ID</th>
+                        <th>Department</th>
+                        <th>Verification Badge</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td>#{{ u.id }}</td>
+                        <td>
+                            <strong>{{ u.name }}</strong>
+                            {% if u.is_admin %}<span style="font-size: 0.7rem; background: #EDE9FE; color: #5B21B6; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">Admin</span>{% endif %}
+                        </td>
+                        <td>
+                            {{ u.email }}
+                            {% if u.has_university_email %}
+                            <div style="font-size: 0.72rem; color: #059669; font-weight: 700;">Institutional Email</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ u.student_id or '—' }}
+                            {% if u.is_temporary_student %}
+                            <span class="temp-badge-tag" style="margin-left: 3px;">1st Sem Temp</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ u.department }}</td>
+                        <td>
+                            <span class="{{ u.verification_badge_class }}">
+                                {{ u.verification_badge_label }}
+                            </span>
+                        </td>
+                        <td>
+                            <form method="POST" action="{{ url_for('admin_verify_user', user_id=u.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <button type="submit" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 4px 10px;">
+                                    {% if u.is_verified %}Revoke{% else %}Verify Manual{% endif %}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 3: SAFETY REPORTS TRIAGE -->
+    <div class="card" style="padding: 28px;">
+        <div style="margin-bottom: 20px;">
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">Safety Incident Reports</h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted);">Submitted by passengers and drivers regarding campus rides</p>
+        </div>
+
+        {% if reports %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Reporter</th>
+                        <th>Category</th>
+                        <th>Details</th>
+                        <th>Filed At</th>
+                        <th>Status</th>
+                        <th>Update Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rep in reports %}
+                    <tr>
+                        <td>#{{ rep.id }}</td>
+                        <td>{{ rep.reporter.name }} ({{ rep.reporter.phone }})</td>
+                        <td><strong>{{ rep.category }}</strong></td>
+                        <td style="max-width: 280px; font-size: 0.82rem;">{{ rep.details }}</td>
+                        <td style="font-size: 0.78rem; color: var(--text-muted);">{{ rep.created_at }}</td>
+                        <td><span class="status-pill status-{{ rep.status | lower }}">{{ rep.status }}</span></td>
+                        <td>
+                            <form method="POST" action="{{ url_for('admin_update_report_status', report_id=rep.id) }}" style="display: flex; gap: 6px;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <select name="status" class="form-control" style="font-size: 0.78rem; padding: 4px 8px; width: auto;">
+                                    <option value="Investigating" {% if rep.status == 'Investigating' %}selected{% endif %}>Investigating</option>
+                                    <option value="Resolved" {% if rep.status == 'Resolved' %}selected{% endif %}>Resolved</option>
+                                    <option value="Dismissed" {% if rep.status == 'Dismissed' %}selected{% endif %}>Dismissed</option>
+                                </select>
+                                <button type="submit" class="btn btn-primary btn-sm" style="font-size: 0.75rem; padding: 4px 8px;">Save</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="color: var(--text-muted); font-size: 0.9rem; font-style: italic;">No safety incident reports filed.</p>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- LIGHTBOX MODAL FOR ID CARD INSPECTION -->
+<div class="modal-overlay" id="imageLightboxOverlay">
+    <div class="modal-card" style="max-width: 680px; text-align: center;">
+        <div class="modal-header">
+            <h3 id="lightboxTitle">ID Card Inspection</h3>
+            <button type="button" class="modal-close" onclick="closeImageLightbox()">&times;</button>
+        </div>
+        <div style="background: #000; border-radius: var(--radius-md); padding: 10px; margin-bottom: 16px;">
+            <img id="lightboxImage" src="" alt="Enlarged ID Card" style="max-width: 100%; max-height: 480px; object-fit: contain; margin: 0 auto;">
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-muted);">
+            <span>Verify student name, photo, and enrollment ID against university records.</span>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="closeImageLightbox()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- REJECT REASON MODAL -->
+<div class="modal-overlay" id="rejectModalOverlay">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Reject Verification Submission</h3>
+            <button type="button" class="modal-close" onclick="closeRejectModal()">&times;</button>
+        </div>
+        <form id="rejectForm" method="POST" action="">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 14px;">
+                Specify the reason for declining <strong id="rejectStudentName">Student</strong>'s ID card:
+            </p>
+
+            <div class="form-group">
+                <label for="rejection_reason">Reason for Rejection</label>
+                <select id="presetReasons" class="form-control" style="margin-bottom: 10px;" onchange="applyPresetReason(this.value)">
+                    <option value="">-- Choose Common Reason --</option>
+                    <option value="The photo is blurry or unreadable. Please upload a sharper photo.">Blurry / Illegible Image</option>
+                    <option value="Enrollment number in form does not match the photo ID card.">Enrollment Number Mismatch</option>
+                    <option value="The uploaded document is not an official Silver Oak University ID card or admission slip.">Unrecognized Document Type</option>
+                    <option value="The photo appears cropped or key student details are obscured.">Incomplete / Obscured Card</option>
+                </select>
+                <textarea name="rejection_reason" id="rejection_reason" class="form-control" rows="3" required placeholder="Enter explanation for the student..."></textarea>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeRejectModal()">Cancel</button>
+                <button type="submit" class="btn btn-danger btn-sm">Confirm Rejection</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openImageLightbox(imageSrc, title) {
+    document.getElementById('lightboxImage').src = imageSrc;
+    document.getElementById('lightboxTitle').innerText = title;
+    document.getElementById('imageLightboxOverlay').classList.add('active');
+}
+function closeImageLightbox() {
+    document.getElementById('imageLightboxOverlay').classList.remove('active');
+}
+function openRejectModal(userId, userName) {
+    document.getElementById('rejectForm').action = '/admin/user/' + userId + '/reject-id';
+    document.getElementById('rejectStudentName').innerText = userName;
+    document.getElementById('rejectModalOverlay').classList.add('active');
+}
+function closeRejectModal() {
+    document.getElementById('rejectModalOverlay').classList.remove('active');
+}
+function applyPresetReason(val) {
+    if (val) {
+        document.getElementById('rejection_reason').value = val;
+    }
+}
+</script>
+{% endblock %}

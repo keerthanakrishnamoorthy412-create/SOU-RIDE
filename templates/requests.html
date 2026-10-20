@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Driver Requests | SOU Ride{% endblock %}
+{% block page_title %}Driver Booking Requests{% endblock %}
+
+{% block content %}
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+    <div>
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary);">Passenger Requests Received</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Review and confirm student booking requests for your published rides</p>
+    </div>
+
+    <!-- FILTER CHIPS -->
+    <div style="display: flex; gap: 8px;">
+        <a href="{{ url_for('requests_view', status='All') }}" class="btn {% if status_filter == 'All' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">All</a>
+        <a href="{{ url_for('requests_view', status='Pending') }}" class="btn {% if status_filter == 'Pending' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Pending</a>
+        <a href="{{ url_for('requests_view', status='Accepted') }}" class="btn {% if status_filter == 'Accepted' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Accepted</a>
+    </div>
+</div>
+
+{% if incoming_requests %}
+<div class="requests-list">
+    {% for req in incoming_requests %}
+    <div class="request-card" style="padding: 24px;">
+        <!-- PASSENGER INFO -->
+        <div class="req-user-block">
+            <div class="user-avatar" style="width: 48px; height: 48px; font-size: 1.2rem;">
+                {{ req.passenger.name[0] | upper }}
+            </div>
+            <div>
+                <strong style="font-size: 1.05rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                    {{ req.passenger.name }}
+                    <span class="{{ req.passenger.verification_badge_class }}" style="font-size: 0.65rem; padding: 1px 6px;">{{ req.passenger.verification_badge_label }}</span>
+                </strong>
+                <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">
+                    ID: {{ req.passenger.student_id or 'Not specified' }} • {{ req.passenger.department }}
+                </span>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">
+                    📞 {{ req.passenger.phone }} • {{ req.passenger.email }}
+                </span>
+            </div>
+        </div>
+
+        <!-- ROUTE & SEATS -->
+        <div class="req-route-block">
+            <div style="font-weight: 800; color: var(--text-primary); font-size: 1.05rem;">
+                {{ req.ride.source }} &rarr; {{ req.ride.destination }}
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+                📅 <strong>{{ req.ride.ride_date }}</strong> at <strong>{{ req.ride.ride_time }}</strong>
+                • Requested: <strong>{{ req.seats_requested }} Seat(s)</strong>
+                • ({{ req.ride.seats }} free on ride)
+            </div>
+
+            {% if req.pickup_location %}
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 6px;">
+                📍 <strong>Preferred Pickup:</strong> {{ req.pickup_location }}
+            </div>
+            {% endif %}
+
+            {% if req.passenger_notes %}
+            <div style="font-size: 0.8rem; color: var(--text-muted); font-style: italic; margin-top: 2px;">
+                💬 "{{ req.passenger_notes }}"
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- STATUS & ACCEPT/REJECT ACTIONS -->
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 12px; min-width: 180px;">
+            <span class="status-pill status-{{ req.status | lower }}">{{ req.status }}</span>
+
+            {% if req.status == 'Pending' %}
+            <div class="req-actions">
+                <!-- ACCEPT FORM (POST with CSRF) -->
+                <form method="POST" action="{{ url_for('accept_request', request_id=req.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-success btn-sm">
+                        ✓ Accept ({{ req.seats_requested }} seat)
+                    </button>
+                </form>
+
+                <!-- REJECT FORM (POST with CSRF) -->
+                <form method="POST" action="{{ url_for('reject_request', request_id=req.id) }}" onsubmit="return confirm('Decline this ride request?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-outline btn-sm" style="color: #DC2626 !important; border-color: #FECACA;">
+                        ✕ Reject
+                    </button>
+                </form>
+            </div>
+            {% elif req.status == 'Accepted' %}
+            <div style="font-size: 0.8rem; color: #059669; font-weight: 700;">
+                ✓ Passenger Confirmed
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card" style="text-align: center; padding: 50px 20px; color: var(--text-muted);">
+    <div style="font-size: 2.5rem; margin-bottom: 12px;">📬</div>
+    <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-bottom: 6px;">No requests found</h3>
+    <p style="font-size: 0.92rem; max-width: 480px; margin: 0 auto 18px;">
+        When other students request seats for your published rides, they will appear here for your review and approval.
+    </p>
+    <a href="{{ url_for('my_rides') }}" class="btn btn-secondary btn-sm">View Your Rides</a>
+</div>
+{% endif %}
+{% endblock %}

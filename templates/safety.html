@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Campus Safety & Guidelines | SOU Ride{% endblock %}
+{% block page_title %}Campus Safety & Guidelines{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px;">
+
+    <!-- PROTOTYPE EMERGENCY BANNER -->
+    <div style="background: #FEF2F2; border: 1.5px solid #FECACA; border-radius: var(--radius-xl); padding: 28px; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; align-items: flex-start; gap: 16px;">
+            <div style="background: #FEE2E2; color: #DC2626; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;">
+                🚨
+            </div>
+            <div>
+                <span class="status-pill status-rejected" style="margin-bottom: 8px;">Academic Project Prototype</span>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: #991B1B; margin-top: 4px;">
+                    Emergency Response & Campus Dispatch Numbers
+                </h3>
+                <p style="font-size: 0.9rem; color: #7F1D1D; margin: 6px 0 16px; line-height: 1.5;">
+                    SOU Ride connects verified Silver Oak University peers. If you face any immediate physical danger, harassment, or road emergency, do not wait for online ticket review—call real emergency services immediately:
+                </p>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                    <div style="background: var(--surface-card); border: 1px solid #FECACA; border-radius: var(--radius-md); padding: 12px 16px;">
+                        <span style="font-size: 0.72rem; color: #991B1B; font-weight: 800; text-transform: uppercase;">Gujarat Emergency</span>
+                        <div style="font-size: 1.2rem; font-weight: 900; color: #991B1B;"><a href="tel:112" style="color: #991B1B;">112</a></div>
+                    </div>
+                    <div style="background: var(--surface-card); border: 1px solid #FECACA; border-radius: var(--radius-md); padding: 12px 16px;">
+                        <span style="font-size: 0.72rem; color: #991B1B; font-weight: 800; text-transform: uppercase;">SOU Security Desk</span>
+                        <div style="font-size: 1.2rem; font-weight: 900; color: #991B1B;"><a href="tel:07966046304" style="color: #991B1B;">079-66046304</a></div>
+                    </div>
+                    <div style="background: var(--surface-card); border: 1px solid #FECACA; border-radius: var(--radius-md); padding: 12px 16px;">
+                        <span style="font-size: 0.72rem; color: #991B1B; font-weight: 800; text-transform: uppercase;">Abhayam Women Helpline</span>
+                        <div style="font-size: 1.2rem; font-weight: 900; color: #991B1B;"><a href="tel:181" style="color: #991B1B;">181</a></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CAMPUS CARPOOL GUIDELINES -->
+    <div class="card" style="padding: 32px;">
+        <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--text-primary); margin-bottom: 6px;">
+            Silver Oak University Commute Code of Conduct
+        </h3>
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 24px;">
+            Follow these essential rules to ensure safe, comfortable journeys for everyone:
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px;">
+            <div style="display: flex; gap: 14px;">
+                <div style="font-size: 1.3rem;">🪪</div>
+                <div>
+                    <strong style="font-size: 0.95rem; color: var(--text-primary); display: block;">Verify Student ID</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+                        Always check each other's university enrollment ID card before getting into the vehicle.
+                    </p>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 14px;">
+                <div style="font-size: 1.3rem;">📍</div>
+                <div>
+                    <strong style="font-size: 0.95rem; color: var(--text-primary); display: block;">Public Campus Landmarks</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+                        Pick up passengers only at designated spots (Main Gate, Gate 2, Apple Lab, Gota BRTS stop).
+                    </p>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 14px;">
+                <div style="font-size: 1.3rem;">⛑️</div>
+                <div>
+                    <strong style="font-size: 0.95rem; color: var(--text-primary); display: block;">Protective Gear</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+                        Helmets are compulsory for two-wheeler rides on SG Highway. Seatbelts mandatory in cars.
+                    </p>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 14px;">
+                <div style="font-size: 1.3rem;">🤝</div>
+                <div>
+                    <strong style="font-size: 0.95rem; color: var(--text-primary); display: block;">Mutual Respect</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+                        Strict zero tolerance for rash driving, harassment, or substance consumption during campus commutes.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INCIDENT REPORT FORM -->
+    <div class="card" style="padding: 32px;">
+        <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--text-primary); margin-bottom: 6px;">
+            Report a Safety Concern or Incident
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 24px;">
+            Reports are confidentially reviewed by the Silver Oak student transport cell & platform administrators.
+        </p>
+
+        <form method="POST" action="{{ url_for('safety') }}">
+            {{ form.hidden_tag() }}
+
+            <div class="form-group">
+                <label for="category">Incident Type</label>
+                {{ form.category(class="form-control", id="category") }}
+                {% if form.category.errors %}
+                <div class="form-error">{{ form.category.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="details">Detailed Explanation</label>
+                {{ form.details(class="form-control", id="details", rows=4, placeholder="Please provide specific details: time, location, vehicle number, or student involved...") }}
+                {% if form.details.errors %}
+                <div class="form-error">{{ form.details.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-danger" style="padding: 12px 24px;">
+                Submit Incident Report
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

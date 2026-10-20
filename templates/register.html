@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Student Registration | SOU Ride{% endblock %}
+
+{% block public_content %}
+<div style="min-height: calc(100vh - 120px); display: flex; align-items: center; justify-content: center; padding: 40px 20px;">
+    <div class="form-card" style="max-width: 620px; width: 100%;">
+        <div class="form-header">
+            <div class="brand-icon-box" style="margin: 0 auto 16px; width: 50px; height: 50px;">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            </div>
+            <h2>Join the SOU Ride Community</h2>
+            <p>Peer ride-sharing exclusively for Silver Oak University, Ahmedabad</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('register') }}">
+            {{ form.hidden_tag() }}
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    {{ form.name(class="form-control", id="name", placeholder="e.g. Keerthana Chettiyar", autofocus=True) }}
+                    {% if form.name.errors %}
+                    <div class="form-error">{{ form.name.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="student_id">Enrollment ID</label>
+                    {{ form.student_id(class="form-control", id="student_id", placeholder="e.g. 2501030600029") }}
+                    {% if form.student_id.errors %}
+                    <div class="form-error">{{ form.student_id.errors[0] }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="email">University or Personal Email</label>
+                {{ form.email(class="form-control", id="email", placeholder="e.g. 2501030600029@silveroakuni.ac.in") }}
+                <div class="form-text" style="display: flex; align-items: center; gap: 6px; color: var(--primary-700); font-weight: 500;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    Official <code>@silveroakuni.ac.in</code> emails are instantly verified on registration.
+                </div>
+                {% if form.email.errors %}
+                <div class="form-error">{{ form.email.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="department">Department / Faculty</label>
+                    {{ form.department(class="form-control", id="department") }}
+                    {% if form.department.errors %}
+                    <div class="form-error">{{ form.department.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Mobile (WhatsApp)</label>
+                    {{ form.phone(class="form-control", id="phone", placeholder="e.g. 9876543210") }}
+                    {% if form.phone.errors %}
+                    <div class="form-error">{{ form.phone.errors[0] }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    {{ form.password(class="form-control", id="password", placeholder="At least 6 characters") }}
+                    {% if form.password.errors %}
+                    <div class="form-error">{{ form.password.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    {{ form.confirm_password(class="form-control", id="confirm_password", placeholder="Repeat password") }}
+                    {% if form.confirm_password.errors %}
+                    <div class="form-error">{{ form.confirm_password.errors[0] }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 13px; font-size: 1rem; margin-top: 10px;">
+                Create Account & Join Campus Network &rarr;
+            </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 24px; font-size: 0.9rem; color: var(--text-muted);">
+            Already have an account? <a href="{{ url_for('login') }}" style="font-weight: 700;">Sign in here</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

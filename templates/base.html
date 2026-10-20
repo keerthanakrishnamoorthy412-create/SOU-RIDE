@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SOU Ride - Verified peer-to-peer carpooling & ride-sharing for the Silver Oak University community in Ahmedabad, Gujarat.">
+    <meta name="theme-color" content="#6D28D9">
+    <title>{% block title %}SOU Ride | Silver Oak University Mobility{% endblock %}</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Leaflet Maps CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        (function() {
+            var t = localStorage.getItem("sou_ride_theme") || "purple";
+            document.documentElement.setAttribute("data-theme", t);
+        })();
+    </script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <!-- TRANSLUCENT SILVER OAK UNIVERSITY CAMPUS WATERMARK BACKGROUND -->
+    <div class="campus-bg-watermark" aria-hidden="true">
+        <div class="campus-photo-backdrop"></div>
+        <div class="campus-photo-overlay"></div>
+        <div class="watermark-inner">
+            <svg class="watermark-svg-crest" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Outer Heraldic Shield -->
+                <path d="M100 12 C138 12 178 20 178 62 C178 128 132 172 100 192 C68 172 22 128 22 62 C22 20 62 12 100 12 Z" stroke="currentColor" stroke-width="4.5" stroke-linejoin="round"/>
+                <!-- Inner Shield Inset Border -->
+                <path d="M100 22 C132 22 166 28 166 65 C166 122 126 161 100 179 C74 161 34 122 34 65 C34 28 68 22 100 22 Z" stroke="currentColor" stroke-width="2" stroke-dasharray="5 3.5"/>
+                
+                <!-- 3 Academic Stars atop the seal -->
+                <path d="M100 27 L102.5 33 L109 33 L104 37 L106 43 L100 39 L94 43 L96 37 L91 33 L97.5 33 Z" fill="currentColor"/>
+                <path d="M80 33 L81.8 37.5 L86.5 37.5 L82.8 40.5 L84.2 45 L80 42 L75.8 45 L77.2 40.5 L73.5 37.5 L78.2 37.5 Z" fill="currentColor"/>
+                <path d="M120 33 L121.8 37.5 L126.5 37.5 L122.8 40.5 L124.2 45 L120 42 L115.8 45 L117.2 40.5 L113.5 37.5 L118.2 37.5 Z" fill="currentColor"/>
+
+                <!-- The Silver Oak Tree of Knowledge (Canopy, Branches, Trunk & Roots) -->
+                <path d="M100 48 C90 48 82 55 83 65 C74 66 67 74 69 84 C71 92 78 98 87 98 C91 98 96 95 99 92 C102 94 106 94 109 92 C112 95 117 98 121 98 C130 98 137 92 139 84 C141 74 134 66 125 65 C126 55 118 48 108 48 C105 48 102 49 100 51 C98 49 95 48 100 48 Z" fill="currentColor" opacity="0.32" stroke="currentColor" stroke-width="2"/>
+                <path d="M100 95 L100 60 M100 78 L88 68 M100 72 L112 63 M100 84 L85 78 M100 82 L114 77" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                
+                <!-- Tree Trunk & Roots Spread -->
+                <path d="M96 95 C96 112 92 124 84 136 C89 136 94 135 100 135 C106 135 111 136 116 136 C108 124 104 112 104 95 Z" fill="currentColor"/>
+                <path d="M84 136 C78 141 68 144 60 145 M116 136 C122 141 132 144 140 145 M93 136 L88 145 M107 136 L112 145" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                
+                <!-- Open Book of Learning & Innovation -->
+                <path d="M68 150 Q100 144 100 154 Q100 144 132 150 L132 162 Q100 156 100 166 Q100 156 68 162 Z" fill="currentColor" opacity="0.25" stroke="currentColor" stroke-width="2"/>
+                <line x1="100" y1="154" x2="100" y2="166" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <div class="watermark-title">Silver Oak University</div>
+            <div class="watermark-tagline">Ahmedabad • Gujarat • Estd. 2009</div>
+            <div class="watermark-motto">Education to Innovation • Campus Mobility</div>
+        </div>
+    </div>
+
+    <!-- PROTOTYPE SAFETY & EMERGENCY NOTICE BANNER -->
+    <div class="prototype-sos-banner" role="banner">
+        <span class="sos-badge">Academic Prototype</span>
+        <span>SOU Ride is an IDT peer-mobility project. In an actual emergency, dial <strong>112</strong> or call SOU Campus Security: <strong>079-66046304</strong>.</span>
+        <a href="#sos-modal" id="sosModalBtn">View Campus Safety Protocols</a>
+    </div>
+
+    {% if current_user %}
+    <!-- ================= LOGGED-IN APP SHELL ================= -->
+    <div class="app-layout">
+        <div id="sidebarOverlay" class="modal-overlay" style="z-index: 95;"></div>
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar" aria-label="Main Navigation">
+            <div class="sidebar-header">
+                <div class="brand-icon-box">
+                    <!-- Modern Carpool / Route SVG -->
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C2.1 10.7 2 11 2 11.4V16c0 .6.4 1 1 1h2"/>
+                        <circle cx="7" cy="17" r="2"/>
+                        <path d="M9 17h6"/>
+                        <circle cx="17" cy="17" r="2"/>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h2>SOU Ride</h2>
+                    <span>Campus Mobility</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <span class="nav-category">Commute</span>
+                <a href="{{ url_for('dashboard') }}" class="nav-link-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+                    Dashboard
+                </a>
+                <a href="{{ url_for('search') }}" class="nav-link-item {% if request.endpoint == 'search' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Find a Ride
+                </a>
+                <a href="{{ url_for('offer') }}" class="nav-link-item {% if request.endpoint == 'offer' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+                    Offer a Ride
+                </a>
+
+                <span class="nav-category">My Trips</span>
+                <a href="{{ url_for('my_bookings') }}" class="nav-link-item {% if request.endpoint == 'my_bookings' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    My Bookings
+                </a>
+                <a href="{{ url_for('my_rides') }}" class="nav-link-item {% if request.endpoint == 'my_rides' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
+                    My Rides
+                </a>
+                <a href="{{ url_for('requests_view') }}" class="nav-link-item {% if request.endpoint == 'requests_view' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Driver Requests
+                </a>
+
+                <span class="nav-category">Account & Safety</span>
+                <a href="{{ url_for('profile') }}" class="nav-link-item {% if request.endpoint == 'profile' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+                    Profile & Ratings
+                </a>
+                <a href="{{ url_for('notifications') }}" class="nav-link-item {% if request.endpoint == 'notifications' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                    Notifications
+                    {% if unread_notifs > 0 %}
+                    <span class="nav-badge alert">{{ unread_notifs }}</span>
+                    {% endif %}
+                </a>
+                <a href="{{ url_for('safety') }}" class="nav-link-item {% if request.endpoint == 'safety' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Safety & SOS
+                </a>
+
+                {% if current_user.is_admin %}
+                <span class="nav-category">Moderation</span>
+                <a href="{{ url_for('admin') }}" class="nav-link-item {% if request.endpoint == 'admin' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    Admin Moderation
+                </a>
+                {% endif %}
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-mini-card">
+                    <div class="user-avatar">{{ current_user.name[0] | upper }}</div>
+                    <div class="user-mini-info">
+                        <div class="user-mini-name">{{ current_user.name }}</div>
+                        <div class="user-mini-role">
+                            <span class="{{ current_user.verification_badge_class }}" style="padding: 1px 6px; font-size: 0.65rem;">{{ current_user.verification_badge_label }}</span>
+                        </div>
+                    </div>
+                </div>
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary btn-sm" style="width: 100%; justify-content: center;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Sign Out
+                </a>
+            </div>
+        </aside>
+
+        <!-- MAIN WRAPPER -->
+        <div class="main-wrapper">
+            <!-- TOPBAR -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <div class="topbar-title">
+                        <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+                        <p>Silver Oak University • Gota Campus Mobility</p>
+                    </div>
+                </div>
+
+                <div class="topbar-actions">
+                    <select id="themeSelector" class="theme-select-dropdown" aria-label="Select Campus Theme">
+                        <option value="purple">💜 Royal SOU</option>
+                        <option value="dark">🌙 Dark Obsidian</option>
+                        <option value="monochrome">🖤 Clean Uber/Apple</option>
+                        <option value="crimson">❤️ Varsity Crimson</option>
+                        <option value="blue">💙 Ocean Cobalt</option>
+                        <option value="emerald">🌿 Eco Green</option>
+                    </select>
+
+                    <a href="{{ url_for('offer') }}" class="btn btn-primary btn-sm">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Offer Ride
+                    </a>
+                    <a href="{{ url_for('notifications') }}" class="btn-icon" aria-label="Notifications">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                        {% if unread_notifs > 0 %}<span class="badge-dot"></span>{% endif %}
+                    </a>
+                </div>
+            </header>
+
+            <!-- CONTENT BODY -->
+            <main class="content-body">
+                <!-- FLASH MESSAGES -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="flash-container">
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'error' else 'danger' }}">
+                        <span>{{ message }}</span>
+                        <button type="button" class="alert-close" aria-label="Close alert">&times;</button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- ================= PUBLIC HEADER (LOGGED OUT) ================= -->
+    <header class="public-header">
+        <div class="public-nav-container">
+            <a href="{{ url_for('home') }}" class="public-logo">
+                <div class="brand-icon-box">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C2.1 10.7 2 11 2 11.4V16c0 .6.4 1 1 1h2"/>
+                        <circle cx="7" cy="17" r="2"/>
+                        <path d="M9 17h6"/>
+                        <circle cx="17" cy="17" r="2"/>
+                    </svg>
+                </div>
+                <h2>SOU Ride</h2>
+            </a>
+
+            <div class="public-links">
+                <select id="themeSelectorPublic" class="theme-select-dropdown" aria-label="Select Campus Theme">
+                    <option value="purple">💜 Royal SOU</option>
+                    <option value="dark">🌙 Dark Obsidian</option>
+                    <option value="monochrome">🖤 Clean Uber/Apple</option>
+                    <option value="crimson">❤️ Varsity Crimson</option>
+                    <option value="blue">💙 Ocean Cobalt</option>
+                    <option value="emerald">🌿 Eco Green</option>
+                </select>
+                <a href="{{ url_for('search') }}">Find a Ride</a>
+                <a href="{{ url_for('safety') }}">Safety Protocols</a>
+                <a href="{{ url_for('login') }}" class="btn btn-secondary btn-sm">Sign In</a>
+                <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Join Campus</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- FLASH MESSAGES -->
+        <div class="content-body" style="padding-top: 20px; padding-bottom: 0;">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-container">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category if category != 'error' else 'danger' }}">
+                    <span>{{ message }}</span>
+                    <button type="button" class="alert-close" aria-label="Close alert">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="public-main-content" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+        {% block public_content %}{{ self.content() }}{% endblock %}
+        </div>
+    </main>
+    {% endif %}
+
+    <!-- PROTOTYPE EMERGENCY SOS MODAL -->
+    <div class="modal-overlay" id="sosModalOverlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Campus Safety & Emergency Assistance</h3>
+                <button type="button" class="modal-close" id="sosModalClose">&times;</button>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <p style="font-size: 0.92rem; color: #64748B; margin-bottom: 14px;">
+                    <strong>Academic Project Prototype Notice:</strong> SOU Ride provides direct access to real university and city emergency dispatch contacts for Silver Oak University students and staff.
+                </p>
+
+                <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                    <h4 style="color: #991B1B; font-size: 0.95rem; margin-bottom: 6px;">Immediate Ahmedabad Emergency Services</h4>
+                    <p style="font-size: 0.88rem; color: #7F1D1D; line-height: 1.5;">
+                        • <strong>Gujarat Police Emergency:</strong> <a href="tel:112" style="font-weight: 700; color: #991B1B;">112</a><br>
+                        • <strong>Women Helpline (Abhayam):</strong> <a href="tel:181" style="font-weight: 700; color: #991B1B;">181</a><br>
+                        • <strong>Medical Ambulance:</strong> <a href="tel:108" style="font-weight: 700; color: #991B1B;">108</a>
+                    </p>
+                </div>
+
+                <div style="background: #EDE9FE; border: 1px solid #DDD6FE; border-radius: 12px; padding: 16px;">
+                    <h4 style="color: #5B21B6; font-size: 0.95rem; margin-bottom: 6px;">Silver Oak University Campus Contacts</h4>
+                    <p style="font-size: 0.88rem; color: #4C1D95; line-height: 1.5;">
+                        • <strong>Campus Security Desk:</strong> <a href="tel:07966046304" style="font-weight: 700; color: #5B21B6;">079-66046304</a><br>
+                        • <strong>Main Campus Address:</strong> Opp. Bhagwat Vidyapith, S.G. Highway, Gota, Ahmedabad - 382481<br>
+                        • <strong>Transport Coordination:</strong> Block A / Gate 1 Transport Cell
+                    </p>
+                </div>
+            </div>
+
+            <div style="text-align: right;">
+                <a href="{{ url_for('safety') }}" class="btn btn-outline btn-sm">View Full Safety Guidelines</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Custom Main JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

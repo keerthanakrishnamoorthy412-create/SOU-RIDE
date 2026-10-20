@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In | SOU Ride{% endblock %}
+
+{% block public_content %}
+<div style="min-height: calc(100vh - 120px); display: flex; align-items: center; justify-content: center; padding: 40px 20px;">
+    <div class="form-card" style="max-width: 480px; width: 100%;">
+        <div class="form-header">
+            <div class="brand-icon-box" style="margin: 0 auto 16px; width: 50px; height: 50px;">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C2.1 10.7 2 11 2 11.4V16c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+            </div>
+            <h2>Sign In to SOU Ride</h2>
+            <p>Access campus carpooling with your university account</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('login', next=request.args.get('next')) }}">
+            {{ form.hidden_tag() }}
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                {{ form.email(class="form-control", id="email", placeholder="e.g. 2501030600029@silveroakuni.ac.in", autofocus=True) }}
+                {% if form.email.errors %}
+                <div class="form-error">{{ form.email.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label for="password" style="margin-bottom: 0;">Password</label>
+                    <a href="{{ url_for('forgot_password') }}" style="font-size: 0.82rem; font-weight: 600; color: var(--primary-600);">Forgot Password?</a>
+                </div>
+                {{ form.password(class="form-control", id="password", placeholder="Enter your account password") }}
+                {% if form.password.errors %}
+                <div class="form-error">{{ form.password.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; font-size: 0.88rem;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-secondary); font-weight: 500;">
+                    {{ form.remember_me() }}
+                    Remember this device
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 1rem;">
+                Sign In &rarr;
+            </button>
+        </form>
+
+        <!-- DEMO ACCOUNTS HELPER -->
+        <div style="margin-top: 24px; padding: 14px; background: var(--primary-50); border: 1px dashed var(--primary-200); border-radius: var(--radius-md); font-size: 0.8rem; color: var(--primary-900);">
+            <strong>Demo Credentials for Evaluation:</strong><br>
+            • <strong>Verified Student:</strong> <code>2501030600029@silveroakuni.ac.in</code><br>
+            • <strong>Campus Admin:</strong> <code>admin@silveroakuni.ac.in</code> / Password: <code>Admin@123</code>
+        </div>
+
+        <div style="text-align: center; margin-top: 24px; font-size: 0.9rem; color: var(--text-muted);">
+            Don't have an account yet? <a href="{{ url_for('register') }}" style="font-weight: 700;">Create Student Account</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

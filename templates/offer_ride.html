@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Offer a Ride | SOU Ride{% endblock %}
+{% block page_title %}Offer a Ride{% endblock %}
+
+{% block content %}
+<div class="form-card" style="max-width: 740px;">
+    <div class="form-header">
+        <div class="brand-icon-box" style="margin: 0 auto 16px; width: 50px; height: 50px;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+        </div>
+        <h2>Publish a Campus Ride</h2>
+        <p>Share your vehicle seats with fellow Silver Oak University students</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('offer') }}">
+        {{ form.hidden_tag() }}
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="sourceInput">Pickup Origin / Campus Gate</label>
+                {{ form.source(class="form-control", id="sourceInput", placeholder="e.g. Silver Oak University - Main Gate") }}
+                <div class="location-chips">
+                    <span class="location-chip" data-target-input="sourceInput" data-location-value="Silver Oak University - Main Gate">Main Gate</span>
+                    <span class="location-chip" data-target-input="sourceInput" data-location-value="Silver Oak University - Gate 2">Gate 2</span>
+                    <span class="location-chip" data-target-input="sourceInput" data-location-value="Silver Oak University - Block A">Block A</span>
+                    <span class="location-chip" data-target-input="sourceInput" data-location-value="Gota Chokdi">Gota Chokdi</span>
+                </div>
+                {% if form.source.errors %}
+                <div class="form-error">{{ form.source.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="destInput">Drop-off Destination</label>
+                {{ form.destination(class="form-control", id="destInput", placeholder="e.g. Geeta Mandir, Gandhinagar, Chandkheda") }}
+                <div class="location-chips">
+                    <span class="location-chip" data-target-input="destInput" data-location-value="Vaishno Devi Circle, SG Highway">Vaishno Devi</span>
+                    <span class="location-chip" data-target-input="destInput" data-location-value="Geeta Mandir Bus Stand">Geeta Mandir</span>
+                    <span class="location-chip" data-target-input="destInput" data-location-value="Chandkheda - Visat Circle">Chandkheda</span>
+                    <span class="location-chip" data-target-input="destInput" data-location-value="Gandhinagar - Infocity">Infocity</span>
+                </div>
+                {% if form.destination.errors %}
+                <div class="form-error">{{ form.destination.errors[0] }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="ride_date">Ride Date</label>
+                {{ form.ride_date(class="form-control", id="ride_date", type="date") }}
+                {% if form.ride_date.errors %}
+                <div class="form-error">{{ form.ride_date.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="ride_time">Departure Time (24h or AM/PM)</label>
+                {{ form.ride_time(class="form-control", id="ride_time", type="time") }}
+                {% if form.ride_time.errors %}
+                <div class="form-error">{{ form.ride_time.errors[0] }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="seats">Available Passenger Seats</label>
+                {{ form.seats(class="form-control", id="seats", min=1, max=6, value=2) }}
+                <div class="form-text">Choose between 1 and 6 passenger seats.</div>
+                {% if form.seats.errors %}
+                <div class="form-error">{{ form.seats.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="price">Fuel Contribution (₹ per seat)</label>
+                {{ form.price(class="form-control", id="price", placeholder="0 for Free Student Carpool", value=0) }}
+                <div class="form-text">Set ₹0 for a free carpool, or modest fuel share (e.g. ₹20-₹40).</div>
+                {% if form.price.errors %}
+                <div class="form-error">{{ form.price.errors[0] }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="vehicle_model">Vehicle Model</label>
+                {{ form.vehicle_model(class="form-control", id="vehicle_model", placeholder="e.g. Activa 6G / Maruti Swift / i20") }}
+                {% if form.vehicle_model.errors %}
+                <div class="form-error">{{ form.vehicle_model.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="vehicle_number">Vehicle Registration No. (Optional)</label>
+                {{ form.vehicle_number(class="form-control", id="vehicle_number", placeholder="e.g. GJ-01-AB-1234") }}
+                <div class="form-text">Only shared with accepted passengers for campus safety.</div>
+                {% if form.vehicle_number.errors %}
+                <div class="form-error">{{ form.vehicle_number.errors[0] }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="gender_preference">Co-passenger Preference</label>
+            {{ form.gender_preference(class="form-control", id="gender_preference") }}
+        </div>
+
+        <div style="display: flex; gap: 24px; margin-bottom: 20px; padding: 14px; background: var(--surface-subtle); border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; cursor: pointer;">
+                {{ form.ac_available() }}
+                Air Conditioned (Car)
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; cursor: pointer;">
+                {{ form.luggage_allowed() }}
+                College Backpack / Bag Allowed
+            </label>
+        </div>
+
+        <div class="form-group">
+            <label for="notes">Pickup Notes / Landmarks for Students</label>
+            {{ form.notes(class="form-control", id="notes", rows=3, placeholder="e.g. Meeting at Gate 1 near Apple Lab right after 5 PM lab. Helmet mandatory for 2-wheelers.") }}
+            {% if form.notes.errors %}
+            <div class="form-error">{{ form.notes.errors[0] }}</div>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 13px; font-size: 1.05rem;">
+            Publish Campus Ride &rarr;
+        </button>
+    </form>
+</div>
+{% endblock %}
