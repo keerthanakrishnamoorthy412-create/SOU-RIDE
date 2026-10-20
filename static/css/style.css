@@ -30,10 +30,10 @@
                        #F4F1FD;
     --canvas-pattern: none;
     --watermark-color: #5B21B6;
-    --watermark-opacity: 0.035;
-    --campus-photo-opacity: 0.12;
-    --campus-photo-filter: saturate(0.92) contrast(1.06);
-    --campus-photo-blend: multiply;
+    --watermark-opacity: 0;
+    --campus-photo-opacity: 0.30;
+    --campus-photo-filter: saturate(0.95) contrast(1.05);
+    --campus-photo-blend: normal;
 
     /* Shell & Nav */
     --sidebar-bg: #150E28;
@@ -167,9 +167,9 @@
                        #080C14;
     --canvas-pattern: none;
     --watermark-color: #C7D2FE;
-    --watermark-opacity: 0.035;
-    --campus-photo-opacity: 0.14;
-    --campus-photo-filter: brightness(0.85) contrast(1.22) saturate(0.9);
+    --watermark-opacity: 0;
+    --campus-photo-opacity: 0.30;
+    --campus-photo-filter: brightness(0.75) contrast(1.2) saturate(0.9);
     --campus-photo-blend: screen;
 
     /* Shell & Nav */
@@ -275,10 +275,10 @@
     --app-bg-gradient: #F1F2F4;
     --canvas-pattern: radial-gradient(#CBD5E1 1.2px, transparent 1.2px) 0 0 / 22px 22px;
     --watermark-color: #000000;
-    --watermark-opacity: 0.025;
-    --campus-photo-opacity: 0.09;
-    --campus-photo-filter: grayscale(1) contrast(1.12);
-    --campus-photo-blend: multiply;
+    --watermark-opacity: 0;
+    --campus-photo-opacity: 0.30;
+    --campus-photo-filter: grayscale(1) contrast(1.1);
+    --campus-photo-blend: normal;
 
     /* Shell & Nav: Pitch Black Sidebar & Razor Clean Topbar */
     --sidebar-bg: #000000;
@@ -373,10 +373,10 @@
                        #FFF0F0;
     --canvas-pattern: none;
     --watermark-color: #DC2626;
-    --watermark-opacity: 0.035;
-    --campus-photo-opacity: 0.11;
-    --campus-photo-filter: saturate(0.92) contrast(1.06);
-    --campus-photo-blend: multiply;
+    --watermark-opacity: 0;
+    --campus-photo-opacity: 0.30;
+    --campus-photo-filter: saturate(0.95) contrast(1.05);
+    --campus-photo-blend: normal;
 
     /* Shell & Nav: Deep Burgundy Wine Sidebar */
     --sidebar-bg: #220404;
@@ -463,10 +463,10 @@
                        #ECF6FF;
     --canvas-pattern: none;
     --watermark-color: #0284C7;
-    --watermark-opacity: 0.035;
-    --campus-photo-opacity: 0.11;
-    --campus-photo-filter: saturate(0.95) contrast(1.06);
-    --campus-photo-blend: multiply;
+    --watermark-opacity: 0;
+    --campus-photo-opacity: 0.30;
+    --campus-photo-filter: saturate(0.95) contrast(1.05);
+    --campus-photo-blend: normal;
 
     /* Shell & Nav: Abyssal Navy */
     --sidebar-bg: #041224;
@@ -553,10 +553,10 @@
                        #EEFBF3;
     --canvas-pattern: none;
     --watermark-color: #059669;
-    --watermark-opacity: 0.035;
-    --campus-photo-opacity: 0.11;
-    --campus-photo-filter: saturate(0.92) contrast(1.06);
-    --campus-photo-blend: multiply;
+    --watermark-opacity: 0;
+    --campus-photo-opacity: 0.30;
+    --campus-photo-filter: saturate(0.95) contrast(1.05);
+    --campus-photo-blend: normal;
 
     /* Shell & Nav: Deep Pine Forest Sidebar */
     --sidebar-bg: #031810;
@@ -686,7 +686,7 @@ img {
     transition: opacity 0.3s ease;
 }
 
-/* Translucent Campus Photo Layer */
+/* Translucent Campus Photo Layer (30% Translucent) */
 .campus-photo-backdrop {
     position: absolute;
     inset: 0;
@@ -696,40 +696,28 @@ img {
     background-size: cover;
     background-position: center center;
     background-repeat: no-repeat;
-    opacity: var(--campus-photo-opacity, 0.12);
-    filter: var(--campus-photo-filter, saturate(0.92) contrast(1.06));
-    mix-blend-mode: var(--campus-photo-blend, multiply);
+    opacity: var(--campus-photo-opacity, 0.30);
+    filter: var(--campus-photo-filter, saturate(0.95) contrast(1.05));
+    mix-blend-mode: var(--campus-photo-blend, normal);
     pointer-events: none;
     transition: opacity 0.4s ease, filter 0.4s ease;
     transform: scale(1.02);
 }
 
-/* Ambient Vignette & Edge Feathering into Page Background */
+/* Ambient Feathering Vignette */
 .campus-photo-overlay {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle at 50% 50%, transparent 45%, var(--app-bg) 100%);
-    opacity: 0.65;
+    background: radial-gradient(circle at 50% 50%, transparent 55%, var(--app-bg) 100%);
+    opacity: 0.35;
     pointer-events: none;
     transition: background 0.3s ease;
 }
 
 .watermark-inner {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: var(--watermark-color, var(--primary-700));
-    opacity: var(--watermark-opacity, 0.035);
-    transform: scale(1);
-    transition: color 0.3s ease, opacity 0.3s ease;
-    max-width: 860px;
-    padding: 24px;
+    display: none; /* Background displays solely the authentic campus picture at 30% translucency */
 }
 
 @media (min-width: 993px) {
