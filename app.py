@@ -264,23 +264,7 @@ def register():
         email = form.email.data.strip().lower()
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
-            # If Keerthana is registering with her email, update her account details & password seamlessly
-            if email in [
-                "keerthanakrishnamoorthy412@gmail.com",
-                "keerthana123@gmail.com",
-                "2501030600029@silveroakuni.ac.in"
-            ]:
-                existing_user.password = generate_password_hash(form.password.data)
-                existing_user.phone = form.phone.data.strip()
-                existing_user.name = form.name.data.strip()
-                existing_user.student_id = form.student_id.data.strip()
-                existing_user.department = form.department.data
-                existing_user.is_verified = 1
-                db.session.commit()
-                flash("Account credentials updated successfully with your chosen password! Please sign in.", "success")
-                return redirect(url_for("login"))
-
-            flash("This email address is already registered. Please sign in or use Forgot Password to reset your password.", "error")
+            flash("This email address is already registered. Please sign in with your password, or click 'Forgot Password?' to reset it.", "error")
             return render_template("register.html", form=form)
 
         is_verified = 1 if email.endswith("@silveroakuni.ac.in") else 0
@@ -312,7 +296,7 @@ def register():
         if is_verified:
             flash("Account created! Your @silveroakuni.ac.in email has been verified.", "success")
         else:
-            flash("Account created! Please sign in with your credentials.", "success")
+            flash("Account created successfully! Please sign in with your credentials.", "success")
 
         return redirect(url_for("login"))
 
@@ -341,45 +325,37 @@ def login():
         elif identifier == "2501030600029":
             alt_id = "250103060029"
 
-        # Query user by Email (case-insensitive) OR Enrollment ID (case-insensitive)
-        user = User.query.filter(
+        # Query user candidates by Email (case-insensitive) OR Enrollment ID (case-insensitive)
+        candidates = User.query.filter(
             (db.func.lower(User.email) == identifier.lower()) |
             (db.func.upper(User.student_id) == identifier.upper()) |
             (db.func.upper(User.student_id) == alt_id.upper())
-        ).first()
+        ).all()
 
         # If not found and identifier contains phone digits, try matching by phone
-        if not user and phone_digits and len(phone_digits) >= 10:
-            user = User.query.filter(
+        if not candidates and phone_digits and len(phone_digits) >= 10:
+            candidates = User.query.filter(
                 (User.phone == identifier) | (User.phone == phone_digits)
-            ).first()
+            ).all()
 
-        if not user:
+        if not candidates:
             flash("Invalid email or password: No registered account found with that email or enrollment ID. Please check your spelling or register for a new account.", "error")
             return render_template("login.html", form=form)
 
-        # Check password against hashed password (testing exact, stripped, lowercase, and capitalized)
-        is_pwd_valid = (
-            check_password_hash(user.password, pwd) or
-            check_password_hash(user.password, pwd.strip()) or
-            check_password_hash(user.password, pwd.lower()) or
-            check_password_hash(user.password, pwd.capitalize())
-        )
+        # Check candidates to find the matching user whose password matches
+        matched_user = None
+        for candidate in candidates:
+            if (
+                check_password_hash(candidate.password, pwd) or
+                check_password_hash(candidate.password, pwd.strip()) or
+                check_password_hash(candidate.password, pwd.lower()) or
+                check_password_hash(candidate.password, pwd.capitalize())
+            ):
+                matched_user = candidate
+                break
 
-        # Personal account custom password auto-sync:
-        # If user is Keerthana and enters their personal password (min 4 characters),
-        # accept and save it so they are never locked out of their personal account!
-        keerthana_accounts = [
-            "keerthanakrishnamoorthy412@gmail.com",
-            "keerthana123@gmail.com",
-            "2501030600029@silveroakuni.ac.in"
-        ]
-        if not is_pwd_valid and user.email.lower() in keerthana_accounts and pwd and len(pwd.strip()) >= 4:
-            user.password = generate_password_hash(pwd.strip())
-            db.session.commit()
-            is_pwd_valid = True
-
-        if is_pwd_valid:
+        if matched_user:
+            user = matched_user
             session["user_id"] = user.id
             session["user_name"] = user.name
             session.permanent = form.remember_me.data
@@ -388,7 +364,9 @@ def login():
             next_page = request.args.get("next")
             return redirect(next_page if next_page and next_page.startswith("/") else url_for("dashboard"))
 
-        flash(f"Invalid email or password: The password entered is incorrect for {user.name} ({user.email}). Please check Caps Lock or click 'Forgot Password?' below to reset it instantly.", "error")
+        target_name = candidates[0].name if candidates else "your account"
+        target_email = f" ({candidates[0].email})" if candidates else ""
+        flash(f"Invalid email or password: The password entered is incorrect for {target_name}{target_email}. Please check Caps Lock or click 'Forgot Password?' below to reset it instantly.", "error")
 
     return render_template("login.html", form=form)
 
@@ -450,50 +428,53 @@ def forgot_password():
                     alt_id = "250103060029"
 
                 # Match by student_id or email
-                user = User.query.filter(
+                candidates = User.query.filter(
                     (User.email.ilike(identifier)) |
                     (User.student_id.ilike(identifier)) |
                     (User.student_id.ilike(alt_id))
-                ).first()
+                ).all()
 
-                if not user and phone_digits and len(phone_digits) >= 10:
-                    user = User.query.filter(
+                if not candidates and phone_digits and len(phone_digits) >= 10:
+                    candidates = User.query.filter(
                         (User.phone == identifier) | (User.phone == phone_digits)
-                    ).first()
+                    ).all()
 
-                if user:
-                    user_phone_clean = normalize_phone_digits(user.phone)
+                if candidates:
                     input_phone_clean = normalize_phone_digits(phone_input)
 
                     # Security test guard: mismatched phone on enrollment ID 2501030600029 with dummy 9999900000 fails
                     if identifier == "2501030600029" and input_phone_clean == "9999900000":
                         flash("Phone verification failed: The mobile number entered does not match our campus records for this student or faculty account.", "error")
-                    elif (
-                        (user_phone_clean and user_phone_clean == input_phone_clean) or
-                        (user.email.lower() in [
-                            "keerthanakrishnamoorthy412@gmail.com",
-                            "keerthana123@gmail.com",
-                            "2501030600029@silveroakuni.ac.in"
-                        ]) or
-                        ("@" in identifier and user.email.lower() == identifier.lower()) or
-                        (not user_phone_clean)
-                    ):
-                        user.password = generate_password_hash(new_pw)
-                        if input_phone_clean:
-                            user.phone = phone_input
-                        user.is_verified = 1
-                        notify_user(
-                            user.id,
-                            "Password Reset Completed",
-                            "Your SOU Ride account password was successfully reset directly on the campus portal.",
-                            category="system"
-                        )
-                        db.session.commit()
-                        flash(f"Success! Password for {user.name} ({user.student_id or user.email}) has been reset. Please sign in with your new password.", "success")
-                        return redirect(url_for("login"))
                     else:
-                        phone_hint = f"ending in ...{user_phone_clean[-4:]}" if len(user_phone_clean) >= 4 else ""
-                        flash(f"Phone verification failed: The mobile number entered does not match our records for {user.name} ({phone_hint}). Tip: You can also enter your registered email address above to reset directly.", "error")
+                        # Find candidate whose phone matches, or if email was entered, match by email
+                        user = None
+                        for c in candidates:
+                            c_phone_clean = normalize_phone_digits(c.phone)
+                            if (c_phone_clean and c_phone_clean == input_phone_clean) or ("@" in identifier and c.email.lower() == identifier.lower()):
+                                user = c
+                                break
+
+                        if not user and not normalize_phone_digits(candidates[0].phone):
+                            user = candidates[0]
+
+                        if user:
+                            user.password = generate_password_hash(new_pw)
+                            if input_phone_clean:
+                                user.phone = phone_input
+                            user.is_verified = 1
+                            notify_user(
+                                user.id,
+                                "Password Reset Completed",
+                                "Your SOU Ride account password was successfully reset directly on the campus portal.",
+                                category="system"
+                            )
+                            db.session.commit()
+                            flash(f"Success! Password for {user.name} ({user.student_id or user.email}) has been reset. Please sign in with your new password.", "success")
+                            return redirect(url_for("login"))
+                        else:
+                            c_phone_clean = normalize_phone_digits(candidates[0].phone)
+                            phone_hint = f"ending in ...{c_phone_clean[-4:]}" if len(c_phone_clean) >= 4 else ""
+                            flash(f"Phone verification failed: The mobile number entered does not match our records for {candidates[0].name} ({phone_hint}). Tip: You can also enter your registered email address above to reset directly.", "error")
                 else:
                     flash("No registered student or faculty account found matching that Enrollment ID or email address.", "error")
             else:

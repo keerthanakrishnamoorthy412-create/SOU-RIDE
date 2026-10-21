@@ -56,33 +56,7 @@ def run_seed(app):
             student.student_id = "2501030600029"
             db.session.commit()
 
-        # 3. Ensure Keerthana's personal accounts exist (never overwrite their password if they already exist)
-        personal_accounts = [
-            ("keerthanakrishnamoorthy412@gmail.com", "2501030600029"),
-            ("keerthana123@gmail.com", "2501030500079")
-        ]
-        for p_email, p_sid in personal_accounts:
-            p_user = User.query.filter_by(email=p_email).first()
-            if not p_user:
-                p_user = User(
-                    name="Keerthana Chettiyar",
-                    email=p_email,
-                    password=generate_password_hash("Student@123"),
-                    student_id=p_sid,
-                    phone="9876543210",
-                    role="student",
-                    department="Silver Oak College of Engineering & Technology",
-                    is_verified=1,
-                    bio="Silver Oak engineering student & regular campus carpooler.",
-                    created_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                )
-                db.session.add(p_user)
-            else:
-                p_user.is_verified = 1
-                p_user.student_id = p_sid
-        db.session.commit()
-
-        # 4. Check existing users and auto-verify silveroakuni.ac.in
+        # 3. Check existing users and auto-verify institutional silveroakuni.ac.in accounts
         sou_users = User.query.filter(User.email.ilike("%@silveroakuni.ac.in")).all()
         for u in sou_users:
             u.is_verified = 1
