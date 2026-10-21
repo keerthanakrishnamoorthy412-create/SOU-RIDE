@@ -53,6 +53,33 @@ def test_login_invalid_password(client):
     assert response.status_code == 200
     assert b"Invalid email or password" in response.data
 
+def test_login_with_enrollment_id(client):
+    response = client.post("/login", data={
+        "email": "2501030600029",  # Student ID in the email field
+        "password": "password123"
+    }, follow_redirects=True)
+
+    assert response.status_code == 200
+    assert b"Welcome back, Driver Keerthana" in response.data
+
+def test_login_with_phone_number(client):
+    response = client.post("/login", data={
+        "email": "9876543210",  # Phone number in the identifier field
+        "password": "password123"
+    }, follow_redirects=True)
+
+    assert response.status_code == 200
+    assert b"Welcome back, Driver Keerthana" in response.data
+
+def test_login_with_password_whitespace_tolerance(client):
+    response = client.post("/login", data={
+        "email": "driver@silveroakuni.ac.in",
+        "password": " password123 "  # Accidental leading/trailing space from copy/paste
+    }, follow_redirects=True)
+
+    assert response.status_code == 200
+    assert b"Welcome back, Driver Keerthana" in response.data
+
 def test_logout(auth_driver):
     response = auth_driver.get("/logout", follow_redirects=True)
     assert response.status_code == 200

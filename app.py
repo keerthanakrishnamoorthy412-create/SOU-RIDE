@@ -54,6 +54,11 @@ db.init_app(app)
 
 with app.app_context():
     db.create_all()
+    try:
+        from seed import run_seed
+        run_seed(app)
+    except Exception as e:
+        print(f"[Warning] Auto seed on init: {e}")
 
 
 def analyze_id_card_photo(image_stream):
@@ -305,10 +310,28 @@ def login():
 
     form = LoginForm()
     if form.validate_on_submit():
-        email = form.email.data.strip().lower()
-        user = User.query.filter_by(email=email).first()
+        identifier = form.email.data.strip()
+        pwd = form.password.data
 
-        if user and check_password_hash(user.password, form.password.data):
+        # Normalize digits if identifier looks like a phone number
+        phone_digits = re.sub(r"\D", "", identifier)
+        if phone_digits.startswith("91") and len(phone_digits) == 12:
+            phone_digits = phone_digits[2:]
+
+        # Query user by Email (case-insensitive) OR Enrollment ID (case-insensitive)
+        user = User.query.filter(
+            (db.func.lower(User.email) == identifier.lower()) |
+            (db.func.upper(User.student_id) == identifier.upper())
+        ).first()
+
+        # If not found and identifier contains phone digits, try matching by phone
+        if not user and phone_digits and len(phone_digits) >= 10:
+            user = User.query.filter(
+                (User.phone == identifier) | (User.phone == phone_digits)
+            ).first()
+
+        # Check password against hashed password (testing both exact input and stripped input)
+        if user and pwd and (check_password_hash(user.password, pwd) or check_password_hash(user.password, pwd.strip())):
             session["user_id"] = user.id
             session["user_name"] = user.name
             session.permanent = form.remember_me.data
@@ -1398,6 +1421,8 @@ def admin_update_report_status(report_id):
 # =========================================================
 if __name__ == "__main__":
     from migrate_db import migrate_database
+    from seed import run_seed
     migrate_database()
+    run_seed(app)
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False if os.environ.get("PORT") else True)

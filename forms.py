@@ -10,8 +10,8 @@ def validate_indian_phone(form, field):
         cleaned = re.sub(r'[\s\-\+]', '', field.data)
         if cleaned.startswith('91') and len(cleaned) == 12:
             cleaned = cleaned[2:]
-        if not re.match(r'^[6-9]\d{9}$', cleaned):
-            raise ValidationError("Please enter a valid 10-digit Indian mobile number.")
+        if not re.match(r'^\d{10}$', cleaned):
+            raise ValidationError("Please enter a valid 10-digit mobile number.")
 
 def validate_sou_enrollment(form, field):
     if field.data:
@@ -43,8 +43,8 @@ class RegistrationForm(FlaskForm):
     submit = SubmitField("Create SOU Ride Account")
 
 class LoginForm(FlaskForm):
-    email = StringField("Email Address", validators=[DataRequired(), Email()])
-    password = PasswordField("Password", validators=[DataRequired()])
+    email = StringField("Email Address or Enrollment ID", validators=[DataRequired(message="Please enter your registered email, student enrollment ID, or mobile number.")])
+    password = PasswordField("Password", validators=[DataRequired(message="Please enter your password.")])
     remember_me = BooleanField("Remember Me")
     submit = SubmitField("Sign In to SOU Ride")
 

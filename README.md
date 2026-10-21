@@ -108,8 +108,8 @@ Run the complete automated test suite:
 python -m pytest -v
 ```
 
-### Test Coverage Highlights (43 Tests):
-- `tests/test_auth.py`: Registration, automatic university email verification, login, password hashing, and session management.
+### Test Coverage Highlights (49 Tests):
+- `tests/test_auth.py`: Registration, automatic university email verification, login with email, login with enrollment ID, login with phone number, password whitespace tolerance, and session management.
 - `tests/test_id_verification.py`:
   - Image authenticity heuristic analysis (valid card, blank/solid color rejection, resolution check, aspect ratio check).
   - Temporary enrollment number support (`T2501030600023` detection and validation).
@@ -140,13 +140,11 @@ To get a permanent public URL (e.g. `https://sou-ride.onrender.com`):
 
 ---
 
-## 👥 Demo Accounts
+## 👥 Demo Accounts (1-Click Auto-Fill Available on Sign In Page)
 
-| Role | Email | Password | Student ID / Note | Status |
-| :--- | :--- | :--- | :--- | :--- |
-| **Admin** | `admin@silveroakuni.ac.in` | `Admin@123` | `ADMIN001` | Verified Admin |
-| **Driver (Institutional)** | `driver@silveroakuni.ac.in` | `password123` | `2501030600029` | ✓ Verified SOU Student |
-| **Student (Regular)** | `2501030600029@silveroakuni.ac.in` | `Student@123` | `2501030600029` | ✓ Verified SOU Student |
-| **Passenger (Personal Email)** | `kiran@gmail.com` | `password123` | `2501030600023` | Unverified Community / ID Upload |
-| **1st Sem Temp Student** | `rohan.temp@gmail.com` | `Password@123` | `T2501030600023` | ✓ Verified Temp (1st Sem) |
+| Role | Login Identifier (Email or Enrollment ID) | Password | Note / Status |
+| :--- | :--- | :--- | :--- |
+| **Campus Admin** | `admin@silveroakuni.ac.in` (or `FACULTY-SOU-001`) | `Admin@123` | Verified Campus Transport Admin |
+| **Verified Student** | `2501030600029@silveroakuni.ac.in` (or `2501030600029`) | `Student@123` | ✓ Verified SOU Student (B.Tech) |
+| **Fresh Registration** | Any personal or university email | Custom | Open for fresh student registration |
 

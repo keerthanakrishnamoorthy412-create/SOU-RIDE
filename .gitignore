@@ -16,6 +16,7 @@ env/
 # Backup databases (keep primary database.db for ready-to-run demo)
 instance/
 database_backup_original.db
+database_backup_*.db
 
 # Uploads (keep .gitkeep)
 static/uploads/id_cards/*
