@@ -30,7 +30,6 @@ def run_seed(app):
         else:
             admin.role = "admin"
             admin.is_verified = 1
-            admin.password = generate_password_hash("Admin@123")
             db.session.commit()
 
         # 2. Ensure Verified Student Demo User (password: Student@123)
@@ -53,14 +52,11 @@ def run_seed(app):
             db.session.commit()
             print(f"  + Created Demo Student user: {student_email} (password: Student@123)")
         else:
-            student.password = generate_password_hash("Student@123")
             student.is_verified = 1
             student.student_id = "2501030600029"
-            student.phone = "9876543210"
             db.session.commit()
-            print(f"  + Updated Demo Student user password to: Student@123")
 
-        # 3. Ensure Keerthana's personal accounts are present and verified
+        # 3. Ensure Keerthana's personal accounts exist (never overwrite their password if they already exist)
         personal_accounts = [
             ("keerthanakrishnamoorthy412@gmail.com", "2501030600029"),
             ("keerthana123@gmail.com", "2501030500079")
@@ -82,16 +78,8 @@ def run_seed(app):
                 )
                 db.session.add(p_user)
             else:
-                p_user.password = generate_password_hash("Student@123")
-                p_user.student_id = p_sid
-                p_user.phone = "9876543210"
                 p_user.is_verified = 1
-        db.session.commit()
-
-        # 4. Synchronize all non-admin accounts to password Student@123 for seamless testing
-        all_students = User.query.filter(User.role != "admin").all()
-        for u in all_students:
-            u.password = generate_password_hash("Student@123")
+                p_user.student_id = p_sid
         db.session.commit()
 
         # 4. Check existing users and auto-verify silveroakuni.ac.in
