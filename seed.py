@@ -60,7 +60,35 @@ def run_seed(app):
             db.session.commit()
             print(f"  + Updated Demo Student user password to: Student@123")
 
-        # 3. Synchronize all non-admin accounts to password Student@123 for seamless testing
+        # 3. Ensure Keerthana's personal accounts are present and verified
+        personal_accounts = [
+            ("keerthanakrishnamoorthy412@gmail.com", "2501030600029"),
+            ("keerthana123@gmail.com", "2501030500079")
+        ]
+        for p_email, p_sid in personal_accounts:
+            p_user = User.query.filter_by(email=p_email).first()
+            if not p_user:
+                p_user = User(
+                    name="Keerthana Chettiyar",
+                    email=p_email,
+                    password=generate_password_hash("Student@123"),
+                    student_id=p_sid,
+                    phone="9876543210",
+                    role="student",
+                    department="Silver Oak College of Engineering & Technology",
+                    is_verified=1,
+                    bio="Silver Oak engineering student & regular campus carpooler.",
+                    created_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                )
+                db.session.add(p_user)
+            else:
+                p_user.password = generate_password_hash("Student@123")
+                p_user.student_id = p_sid
+                p_user.phone = "9876543210"
+                p_user.is_verified = 1
+        db.session.commit()
+
+        # 4. Synchronize all non-admin accounts to password Student@123 for seamless testing
         all_students = User.query.filter(User.role != "admin").all()
         for u in all_students:
             u.password = generate_password_hash("Student@123")

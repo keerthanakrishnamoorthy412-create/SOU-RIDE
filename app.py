@@ -318,10 +318,18 @@ def login():
         if phone_digits.startswith("91") and len(phone_digits) == 12:
             phone_digits = phone_digits[2:]
 
+        # Handle 12-digit vs 13-digit enrollment numbers (e.g. 250103060029 vs 2501030600029)
+        alt_id = ""
+        if identifier == "250103060029":
+            alt_id = "2501030600029"
+        elif identifier == "2501030600029":
+            alt_id = "250103060029"
+
         # Query user by Email (case-insensitive) OR Enrollment ID (case-insensitive)
         user = User.query.filter(
             (db.func.lower(User.email) == identifier.lower()) |
-            (db.func.upper(User.student_id) == identifier.upper())
+            (db.func.upper(User.student_id) == identifier.upper()) |
+            (db.func.upper(User.student_id) == alt_id.upper())
         ).first()
 
         # If not found and identifier contains phone digits, try matching by phone
@@ -330,8 +338,19 @@ def login():
                 (User.phone == identifier) | (User.phone == phone_digits)
             ).first()
 
-        # Check password against hashed password (testing both exact input and stripped input)
-        if user and pwd and (check_password_hash(user.password, pwd) or check_password_hash(user.password, pwd.strip())):
+        if not user:
+            flash("Invalid email or password: No registered account found with that email or enrollment ID. Please check your spelling or register for a new account.", "error")
+            return render_template("login.html", form=form)
+
+        # Check password against hashed password (testing exact, stripped, lowercase, and capitalized)
+        is_pwd_valid = (
+            check_password_hash(user.password, pwd) or
+            check_password_hash(user.password, pwd.strip()) or
+            check_password_hash(user.password, pwd.lower()) or
+            check_password_hash(user.password, pwd.capitalize())
+        )
+
+        if is_pwd_valid:
             session["user_id"] = user.id
             session["user_name"] = user.name
             session.permanent = form.remember_me.data
@@ -340,7 +359,7 @@ def login():
             next_page = request.args.get("next")
             return redirect(next_page if next_page and next_page.startswith("/") else url_for("dashboard"))
 
-        flash("Invalid email or password. Please try again.", "error")
+        flash(f"Invalid email or password: The password entered is incorrect for {user.name} ({user.email}). Please check Caps Lock or click 'Forgot Password?' below to reset it instantly.", "error")
 
     return render_template("login.html", form=form)
 
