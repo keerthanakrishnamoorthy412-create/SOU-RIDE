@@ -398,15 +398,6 @@ def login():
                 matched_user = candidate
                 break
 
-        # SOU student ID 2501030600029 tolerance:
-        # If the student enters enrollment ID 2501030600029 with their custom password (min 4 chars),
-        # accept and save it so they are never locked out!
-        if not matched_user and identifier in ["2501030600029", "250103060029"] and len(pwd) >= 4:
-            candidate = candidates[0]
-            candidate.password = generate_password_hash(pwd)
-            db.session.commit()
-            matched_user = candidate
-
         if matched_user:
             user = matched_user
             session["user_id"] = user.id
