@@ -36,7 +36,7 @@
 
             <div class="form-group">
                 <label for="email">University or Personal Email</label>
-                {{ form.email(class="form-control", id="email", placeholder="e.g. 2501030600029@silveroakuni.ac.in") }}
+                {{ form.email(class="form-control", id="email", placeholder="e.g. 2501030600029@silveroakuni.ac.in", autocomplete="email", autocapitalize="none", autocorrect="off", spellcheck="false") }}
                 <div class="form-text" style="display: flex; align-items: center; gap: 6px; color: var(--primary-700); font-weight: 500;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                     Official <code>@silveroakuni.ac.in</code> emails are instantly verified on registration.
@@ -57,7 +57,7 @@
 
                 <div class="form-group">
                     <label for="phone">Mobile (WhatsApp)</label>
-                    {{ form.phone(class="form-control", id="phone", placeholder="e.g. 9876543210") }}
+                    {{ form.phone(class="form-control", id="phone", placeholder="e.g. 9876543210", autocomplete="tel") }}
                     {% if form.phone.errors %}
                     <div class="form-error">{{ form.phone.errors[0] }}</div>
                     {% endif %}
@@ -68,8 +68,8 @@
                 <div class="form-group">
                     <label for="password">Password</label>
                     <div style="position: relative; display: flex; align-items: center;">
-                        {{ form.password(class="form-control", id="password", placeholder="At least 6 characters", style="padding-right: 42px;") }}
-                        <button type="button" onclick="togglePassword('password', this)" title="Show / Hide Password" aria-label="Toggle password visibility" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 4px; display: flex; align-items: center; justify-content: center;">
+                        {{ form.password(class="form-control", id="password", placeholder="At least 6 characters", style="padding-right: 42px;", autocomplete="new-password", autocapitalize="none", autocorrect="off", spellcheck="false") }}
+                        <button type="button" onclick="event.preventDefault(); togglePassword('password', this)" title="Show / Hide Password" aria-label="Toggle password visibility" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 4px; display: flex; align-items: center; justify-content: center;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                         </button>
                     </div>
@@ -81,8 +81,8 @@
                 <div class="form-group">
                     <label for="confirm_password">Confirm Password</label>
                     <div style="position: relative; display: flex; align-items: center;">
-                        {{ form.confirm_password(class="form-control", id="confirm_password", placeholder="Repeat password", style="padding-right: 42px;") }}
-                        <button type="button" onclick="togglePassword('confirm_password', this)" title="Show / Hide Password" aria-label="Toggle password visibility" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 4px; display: flex; align-items: center; justify-content: center;">
+                        {{ form.confirm_password(class="form-control", id="confirm_password", placeholder="Repeat password", style="padding-right: 42px;", autocomplete="new-password", autocapitalize="none", autocorrect="off", spellcheck="false") }}
+                        <button type="button" onclick="event.preventDefault(); togglePassword('confirm_password', this)" title="Show / Hide Password" aria-label="Toggle password visibility" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 4px; display: flex; align-items: center; justify-content: center;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                         </button>
                     </div>

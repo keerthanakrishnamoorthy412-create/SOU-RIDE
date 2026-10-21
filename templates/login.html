@@ -18,7 +18,7 @@
 
             <div class="form-group">
                 <label for="email">University Email or Enrollment ID</label>
-                {{ form.email(class="form-control", id="email", placeholder="e.g. 2501030600029, your.email@silveroakuni.ac.in, or phone", autofocus=True) }}
+                {{ form.email(class="form-control", id="email", placeholder="e.g. 2501030600029, your.email@silveroakuni.ac.in, or phone", autofocus=True, autocomplete="username email", autocapitalize="none", autocorrect="off", spellcheck="false") }}
                 <div class="form-text" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
                     💡 You can enter your <strong>SOU Enrollment ID</strong> (e.g., 2501030600029) or registered email.
                 </div>
@@ -33,8 +33,8 @@
                     <a href="{{ url_for('forgot_password') }}" style="font-size: 0.82rem; font-weight: 600; color: var(--primary-600);">Forgot Password?</a>
                 </div>
                 <div style="position: relative; display: flex; align-items: center;">
-                    {{ form.password(class="form-control", id="password", placeholder="Enter your account password", style="padding-right: 42px;") }}
-                    <button type="button" onclick="togglePassword('password', this)" title="Show / Hide Password" aria-label="Toggle password visibility" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 4px; display: flex; align-items: center; justify-content: center;">
+                    {{ form.password(class="form-control", id="password", placeholder="Enter your account password", style="padding-right: 42px;", autocomplete="current-password", autocapitalize="none", autocorrect="off", spellcheck="false") }}
+                    <button type="button" onclick="event.preventDefault(); togglePassword('password', this)" title="Show / Hide Password" aria-label="Toggle password visibility" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 4px; display: flex; align-items: center; justify-content: center;">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                     </button>
                 </div>
